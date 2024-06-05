@@ -73,10 +73,4 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("nslookup", nslookup_query))
     dispatcher.add_handler(CommandHandler("dnseum", dnseum_query))
     dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_query))
-    dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_query))
-
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == '__main__':
-    main()
+    dispatcher.add_handler(CommandHandler("tld_expand", tld_

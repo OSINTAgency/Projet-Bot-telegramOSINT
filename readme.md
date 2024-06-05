@@ -25,11 +25,12 @@ Un bot Telegram pour effectuer des recherches OSINT et générer des rapports d�
 - `/unsubscribe <query>` - Désabonnez-vous des alertes
 - `/pay_with_crypto <plan>` - Procédez au paiement en crypto pour les fonctionnalités premium
 
-## Déploiement sur Heroku
+## Déploiement sur Vercel
 
 1. Clonez le repo.
-2. Créez une application sur Heroku.
-3. Déployez le code sur Heroku.
+2. Installez Vercel CLI globalement : `npm install -g vercel`.
+3. Connectez-vous à Vercel : `vercel login`.
+4. Déployez le projet : `vercel`.
 
 ## Configuration
 
