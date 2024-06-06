@@ -4,3 +4,5 @@ __pycache__/
 myenv/
 data/reports/
 .vercel
+config.py
+
