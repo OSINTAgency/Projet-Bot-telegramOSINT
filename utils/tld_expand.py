@@ -1,19 +1,9 @@
-# Placeholder for tld-expand tool implementation
-from telegram import Update
-from telegram.ext import CallbackContext
-
-def tld_expand_query(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text('Veuillez fournir une requête pour tld-expand.')
-        return
-
-    # Implementation of tld-expand tool goes here
-    update.message.reply_text(f"Résultats de tld-expand pour '{query}': Fonctionnalité non encore implémentée.")
+import json
 import requests
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, Updater, CommandHandler
 
+# Fonction pour gérer la commande tld_expand
 def tld_expand_query(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
     if not query:
@@ -32,17 +22,14 @@ def tld_expand_query(update: Update, context: CallbackContext) -> None:
             update.message.reply_text(f"Erreur lors de l'accès à l'API tld-expand: {response.status_code}")
     except Exception as e:
         update.message.reply_text(f"Erreur tld-expand: {str(e)}")
-from utils.dnseum import 
 
-
-
-# Ajoutez les nouveaux handlers pour les commandes
+# Fonction de démarrage du bot
 def main() -> None:
     # Initialiser l'updater et le dispatcher
-    updater = Updater(config.TOKEN)
+    updater = Updater("7341170491:AAGVNu7Iq0xWbQbqvjxXBOQHVi4mOo2h7Pc")
     dispatcher = updater.dispatcher
 
-    # Commandes existantes
+    # Ajout des handlers pour les commandes
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("search_twitter", search_twitter))
@@ -60,3 +47,6 @@ def main() -> None:
     # Démarrer le bot
     updater.start_polling()
     updater.idle()
+
+if __name__ == '__main__':
+    main()

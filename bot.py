@@ -23,6 +23,106 @@ from utils.tld_expand import tld_expand_query
 import requests
 import json
 from sendpulse import send_message
+from flask import Flask, request
+
+app = Flask(__name__)
+
+bot_token = os.getenv('7341170491:AAGVNu7Iq0xWbQbqvjxXBOQHVi4mOo2h7Pc')
+bot = telegram.Bot(token=bot_token)
+dispatcher = Dispatcher(bot, None, workers=0)
+
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Bonjour! Je suis votre bot.')
+
+def search_whois(update: Update, context: CallbackContext) -> None:
+    if not context.args:
+        update.message.reply_text('Usage: /search_whois <domain>')
+        return
+
+    domain = context.args[0]
+    try:
+        domain_info = whois.whois(domain)
+        update.message.reply_text(f"Informations WHOIS pour {domain}:\n{domain_info}")
+    except Exception as e:
+        update.message.reply_text(f"Erreur lors de la recherche WHOIS: {str(e)}")
+
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("search_whois", search_whois))
+
+@app.route(f'/{bot_token}', methods=['POST'])
+def webhook():
+    update = telegram.Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return 'ok'
+
+if __name__ == "__main__":
+    app.run(port=5000)
+
+# Fonction pour obtenir le token d'authentification de SendPulse
+def get_sendpulse_token():
+    url = "https://api.sendpulse.com/oauth/access_token"
+    payload = {
+        "grant_type": "client_credentials",
+        "client_id": config.SENDPULSE_ID,
+        "client_secret": config.SENDPULSE_SECRET
+    }
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+    return response.json().get("access_token")
+
+# Fonction pour envoyer des emails via SendPulse
+def send_email_via_sendpulse(subject, body, recipient_email):
+    token = get_sendpulse_token()
+    if not token:
+        return {"result": False, "error": "Unable to get token"}
+
+    url = "https://api.sendpulse.com/smtp/emails"
+    payload = {
+        "email": {
+            "html": body,
+            "text": body,
+            "subject": subject,
+            "from": {
+                "name": config.SENDPULSE_FROM_NAME,
+                "email": config.SENDPULSE_FROM_EMAIL
+            },
+            "to": [
+                {
+                    "name": "Recipient Name",
+                    "email": recipient_email
+                }
+            ]
+        }
+    }
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+    return response.json()
+
+# Commande Telegram pour envoyer des emails
+def send_email(update: Update, context: CallbackContext) -> None:
+    if len(context.args) < 3:
+        update.message.reply_text('Usage: /send_email <email> <subject> <body>')
+        return
+
+    recipient_email = context.args[0]
+    subject = context.args[1]
+    body = ' '.join(context.args[2:])
+    
+    response = send_email_via_sendpulse(subject, body, recipient_email)
+    
+    if response.get("result"):
+        update.message.reply_text(f"Email envoyé à {recipient_email}")
+    else:
+        update.message.reply_text(f"Erreur lors de l'envoi de l'email: {response}")
+
+# Commande par défaut pour afficher la liste des commandes lorsque l'utilisateur tape /
+def default_command(update: Update, context: CallbackContext) -> None:
+    help_command(update, context)
+    
+
 
 # Fonction pour démarrer le bot et afficher le clavier interactif avec les options de commande
 def start(update: Update, context: CallbackContext) -> None:
@@ -49,71 +149,177 @@ def start(update: Update, context: CallbackContext) -> None:
 def button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
-    data = query.data
-    chat_id = update.effective_chat.id
+    command = query.data
 
-    if data == 'whois':
-        send_message(chat_id, "Entrez le domaine pour la recherche Whois : /search_whois <domain>")
-    elif data == 'twitter':
-        send_message(chat_id, "Entrez la requête pour la recherche sur Twitter : /search_twitter <query>")
-    elif data == 'news':
-        send_message(chat_id, "Entrez la requête pour la recherche d'actualités : /search_news <query>")
-    elif data == 'financial':
-        send_message(chat_id, "Entrez le nom de l'entreprise pour la recherche financière : /search_financial <company>")
+    if command == 'whois':
+        query.edit_message_text(text="Utilisez la commande /search_whois <domain> pour effectuer une recherche Whois.")
+    elif command == 'twitter':
+        query.edit_message_text(text="Utilisez la commande /search_twitter <query> pour effectuer une recherche sur Twitter.")
+    elif command == 'news':
+        query.edit_message_text(text="Utilisez la commande /search_news <query> pour effectuer une recherche d'actualités.")
+    elif command == 'financial':
+        query.edit_message_text(text="Utilisez la commande /search_financial <company> pour effectuer une recherche financière.")
+    elif command == 'search_ip':
+        query.edit_message_text(text="Utilisez la commande /search_ip <ip_address> pour effectuer une recherche sur une adresse IP.")
+    elif command == 'search_breaches':
+        query.edit_message_text(text="Utilisez la commande /search_breaches <email> pour rechercher des fuites de données pour une adresse email.")
+    elif command == 'search_engine':
+        query.edit_message_text(text="Utilisez la commande /search_engine <query> pour rechercher sur les moteurs de recherche.")
+    elif command == 'host':
+        query.edit_message_text(text="Utilisez la commande /host <domain> pour obtenir des informations DNS avec l'outil host.")
+    elif command == 'nslookup':
+        query.edit_message_text(text="Utilisez la commande /nslookup <query> pour obtenir des informations DNS avec l'outil nslookup.")
+    elif command == 'dnseum':
+        query.edit_message_text(text="Utilisez la commande /dnseum <query> pour utiliser l'outil dnseum.")
+    elif command == 'bile_suite':
+        query.edit_message_text(text="Utilisez la commande /bile_suite <query> pour utiliser l'outil bile-suite.")
+    elif command == 'tld_expand':
+        query.edit_message_text(text="Utilisez la commande /tld_expand <query> pour obtenir des informations sur les TLD avec l'outil tld-expand.")
+    elif command == 'report':
+        query.edit_message_text(text="Utilisez la commande /report <query> pour générer un rapport détaillé.")
+    elif command == 'history':
+        query.edit_message_text(text="Utilisez la commande /history pour afficher l'historique de vos recherches.")
+    elif command == 'subscribe':
+        query.edit_message_text(text="Utilisez la commande /subscribe <query> pour vous abonner aux alertes pour une requête spécifique.")
+    elif command == 'unsubscribe':
+        query.edit_message_text(text="Utilisez la commande /unsubscribe <query> pour vous désabonner des alertes.")
+    elif command == 'pay_with_crypto':
+        query.edit_message_text(text="Utilisez la commande /pay_with_crypto <plan> pour procéder au paiement en crypto pour les fonctionnalités premium.")
 
-# Fonction pour afficher les commandes disponibles
+# Fonction pour afficher l'aide
 def help_command(update: Update, context: CallbackContext) -> None:
-    help_message = (
-        "Voici une liste des commandes disponibles :\n"
+    help_text = (
+        "Voici les commandes disponibles:\n"
         "/start - Démarre le bot\n"
         "/help - Affiche cette aide\n"
-        "/search_whois <domain> - Recherche Whois pour un domaine\n"
+        "/search <query> - Effectue une recherche OSINT\n"
         "/search_twitter <query> - Recherche sur Twitter\n"
-        "/search_news <query> - Recherche d'actualités\n"
+        "/search_whois <domain> - Recherche Whois pour un domaine\n"
+        "/search_ip <ip_address> - Recherche d'informations sur une adresse IP\n"
+        "/search_breaches <email> - Recherche de fuites de données pour une adresse email\n"
+        "/search_engine <query> - Recherche sur les moteurs de recherche\n"
         "/search_financial <company> - Recherche financière sur une entreprise\n"
+        "/search_news <query> - Recherche d'actualités sur Google Actualités\n"
+        "/host <domain> - Utilise l'outil host pour obtenir des informations DNS\n"
+        "/nslookup <query> - Utilise l'outil nslookup pour obtenir des informations DNS\n"
+        "/dnseum <query> - Utilise l'outil dnseum\n"
+        "/bile_suite <query> - Utilise l'outil bile-suite\n"
+        "/tld_expand <query> - Utilise l'outil tld-expand pour obtenir des informations sur les TLD\n"
+        "/report <query> - Génère un rapport détaillé\n"
+        "/history - Affiche l'historique de vos recherches\n"
+        "/subscribe <query> - Abonnez-vous aux alertes pour une requête spécifique\n"
+        "/unsubscribe <query> - Désabonnez-vous des alertes\n"
+        "/pay_with_crypto <plan> - Procédez au paiement en crypto pour les fonctionnalités premium\n"
     )
-    update.message.reply_text(help_message)
+    update.message.reply_text(help_text)
 
-# Fonction pour effectuer une recherche Whois
-def search_whois(update: Update, context: CallbackContext) -> None:
+# Fonction pour effectuer une recherche générique OSINT
+def search(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
     if not query:
-        update.message.reply_text('Veuillez fournir un domaine pour la recherche Whois.')
+        update.message.reply_text("Veuillez fournir une requête pour la recherche.")
         return
 
-    try:
-        domain_info = whois.whois(query)
-        response_message = (
-            f"Informations WHOIS pour {query}:\n"
-            f"Domain Name: {domain_info.domain_name}\n"
-            f"Registrar: {domain_info.registrar}\n"
-            f"Creation Date: {domain_info.creation_date}\n"
-            f"Expiration Date: {domain_info.expiration_date}\n"
-            f"Name Servers: {', '.join(domain_info.name_servers)}\n"
-        )
-        update.message.reply_text(response_message)
-    except Exception as e:
-        update.message.reply_text(f"Erreur lors de la recherche WHOIS : {str(e)}")
+    results = search_engine(query)
+    update.message.reply_text(f"Résultats de la recherche pour '{query}':\n{results}")
 
-# Fonction pour effectuer une recherche sur Twitter
-def search_twitter(update: Update, context: CallbackContext) -> None:
+# Fonctions de recherche spécifiques
+def search_twitter_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
     if not query:
-        update.message.reply_text('Veuillez fournir une requête pour la recherche sur Twitter.')
+        update.message.reply_text("Veuillez fournir une requête pour la recherche sur Twitter.")
         return
+    search_twitter(update, context, query)
 
-    try:
-        twitter_api_url = f"https://api.twitter.com/2/tweets/search/recent?query={query}"
-        headers = {"Authorization": f"Bearer {config.TWITTER_BEARER_TOKEN}"}
-        response = requests.get(twitter_api_url, headers=headers)
-        if response.status_code == 200:
-            twitter_data = response.json()
-            formatted_data = json.dumps(twitter_data, indent=2)
-            update.message.reply_text(f"Résultats Twitter pour '{query}':\n{formatted_data}")
-        else:
-            update.message.reply_text("Erreur lors de l'accès à l'API Twitter.")
-    except Exception as e:
-        update.message.reply_text(f"Erreur Twitter: {str(e)}")
+def search_whois_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir un domaine pour la recherche Whois.")
+        return
+    search_whois(update, context, query)
+
+def search_ip_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une adresse IP pour la recherche.")
+        return
+    search_ip(update, context, query)
+
+def search_breaches_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une adresse email pour la recherche de fuites de données.")
+        return
+    search_breaches(update, context, query)
+
+def search_news_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une requête pour la recherche d'actualités.")
+        return
+    search_news(update, context, query)
+
+def search_financial_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une entreprise pour la recherche financière.")
+        return
+    search_financial(update, context, query)
+
+def host_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir un domaine pour l'outil host.")
+        return
+    host_lookup(update, context, query)
+
+def nslookup_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une requête pour l'outil nslookup.")
+        return
+    nslookup_query(update, context, query)
+
+def dnseum_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une requête pour l'outil dnseum.")
+        return
+    dnseum_query(update, context, query)
+
+def bile_suite_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une requête pour l'outil bile-suite.")
+        return
+    bile_suite_query(update, context, query)
+
+def tld_expand_command(update: Update, context: CallbackContext) -> None:
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text("Veuillez fournir une requête pour l'outil tld-expand.")
+        return
+    tld_expand_query(update, context, query)
+
+def generate_report(update: Update, context: CallbackContext) -> None:
+    # Implémentation de la génération de rapport
+    update.message.reply_text("Fonction de génération de rapport non encore implémentée.")
+
+def show_history(update: Update, context: CallbackContext) -> None:
+    # Implémentation de l'affichage de l'historique
+    update.message.reply_text("Fonction d'affichage de l'historique non encore implémentée.")
+
+def subscribe_alerts(update: Update, context: CallbackContext) -> None:
+    # Implémentation de l'abonnement aux alertes
+    update.message.reply_text("Fonction d'abonnement aux alertes non encore implémentée.")
+
+def unsubscribe_alerts(update: Update, context: CallbackContext) -> None:
+    # Implémentation du désabonnement aux alertes
+    update.message.reply_text("Fonction de désabonnement aux alertes non encore implémentée.")
+
+def pay_with_crypto(update: Update, context: CallbackContext) -> None:
+    # Implémentation du paiement en crypto
+    update.message.reply_text("Fonction de paiement en crypto non encore implémentée.")
 
 # Fonction principale pour démarrer le bot
 def main() -> None:
@@ -124,18 +330,24 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CallbackQueryHandler(button))
-    dispatcher.add_handler(CommandHandler("search_whois", search_whois))
-    dispatcher.add_handler(CommandHandler("search_twitter", search_twitter))
-    dispatcher.add_handler(CommandHandler("search_news", search_news))
-    dispatcher.add_handler(CommandHandler("search_financial", search_financial))
-    dispatcher.add_handler(CommandHandler("search_ip", search_ip))
-    dispatcher.add_handler(CommandHandler("search_breaches", search_breaches))
-    dispatcher.add_handler(CommandHandler("search_engine", search_engine))
-    dispatcher.add_handler(CommandHandler("host", host_lookup))
-    dispatcher.add_handler(CommandHandler("nslookup", nslookup_query))
-    dispatcher.add_handler(CommandHandler("dnseum", dnseum_query))
-    dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_query))
-    dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_query))
+    dispatcher.add_handler(CommandHandler("search", search))
+    dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
+    dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
+    dispatcher.add_handler(CommandHandler("search_news", search_news_command))
+    dispatcher.add_handler(CommandHandler("search_financial", search_financial_command))
+    dispatcher.add_handler(CommandHandler("search_ip", search_ip_command))
+    dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command))
+    dispatcher.add_handler(CommandHandler("search_engine", search))
+    dispatcher.add_handler(CommandHandler("host", host_command))
+    dispatcher.add_handler(CommandHandler("nslookup", nslookup_command))
+    dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
+    dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_command))
+    dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
+    dispatcher.add_handler(CommandHandler("report", generate_report))
+    dispatcher.add_handler(CommandHandler("history", show_history))
+    dispatcher.add_handler(CommandHandler("subscribe", subscribe_alerts))
+    dispatcher.add_handler(CommandHandler("unsubscribe", unsubscribe_alerts))
+    dispatcher.add_handler(CommandHandler("pay_with_crypto", pay_with_crypto))
 
     updater.start_polling()
     updater.idle()
