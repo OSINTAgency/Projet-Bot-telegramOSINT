@@ -1,11 +1,12 @@
-# Importation des modules nécessaires de la bibliothèque Telegram
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
-
-# Importation des configurations et des clés API
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, Dispatcher
+from flask import Flask, request
+import os
+import telegram
+import whois
+import requests
+import json
 import config
-
-# Importation des fonctions de recherche OSINT définies dans les modules utils
 from utils.twitter import search_twitter
 from utils.whois import search_whois
 from utils.ip import search_ip
@@ -19,22 +20,22 @@ from utils.dnseum import dnseum_query
 from utils.bile_suite import bile_suite_query
 from utils.tld_expand import tld_expand_query
 
-# Importation des bibliothèques supplémentaires nécessaires
-import requests
-import json
-from sendpulse import send_message
-from flask import Flask, request
-
 app = Flask(__name__)
 
-bot_token = os.getenv('7341170491:AAGVNu7Iq0xWbQbqvjxXBOQHVi4mOo2h7Pc')
+# Obtenir le token de bot à partir des variables d'environnement
+bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+if not bot_token:
+    raise ValueError("TELEGRAM_BOT_TOKEN is not set in environment variables")
+
 bot = telegram.Bot(token=bot_token)
 dispatcher = Dispatcher(bot, None, workers=0)
 
+# Fonction start
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Bonjour! Je suis votre bot.')
 
-def search_whois(update: Update, context: CallbackContext) -> None:
+# Fonction de recherche WHOIS
+def search_whois_command(update: Update, context: CallbackContext) -> None:
     if not context.args:
         update.message.reply_text('Usage: /search_whois <domain>')
         return
@@ -49,14 +50,12 @@ def search_whois(update: Update, context: CallbackContext) -> None:
 dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CommandHandler("search_whois", search_whois))
 
+# Route pour le webhook
 @app.route(f'/{bot_token}', methods=['POST'])
 def webhook():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
     dispatcher.process_update(update)
     return 'ok'
-
-if __name__ == "__main__":
-    app.run(port=5000)
 
 # Fonction pour obtenir le token d'authentification de SendPulse
 def get_sendpulse_token():
