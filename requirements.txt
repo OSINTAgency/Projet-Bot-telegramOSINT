@@ -2,7 +2,6 @@ python-telegram-bot==13.7
 requests==2.25.1
 whois==0.9.13
 ipwhois==1.2.0
-reportlab==3.5.67
 stripe==2.56.0
 coinbase-commerce==1.0.0
 beautifulsoup4==4.9.3
