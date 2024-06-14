@@ -6,7 +6,8 @@ import telegram
 import whois
 import requests
 import json
-import config
+
+# Importer les fonctions utilitaires
 from utils.twitter import search_twitter
 from utils.whois import search_whois
 from utils.ip import search_ip
@@ -48,7 +49,7 @@ def search_whois_command(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f"Erreur lors de la recherche WHOIS: {str(e)}")
 
 dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(CommandHandler("search_whois", search_whois))
+dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
 
 # Route pour le webhook
 @app.route(f'/{bot_token}', methods=['POST'])
@@ -62,8 +63,8 @@ def get_sendpulse_token():
     url = "https://api.sendpulse.com/oauth/access_token"
     payload = {
         "grant_type": "client_credentials",
-        "client_id": config.SENDPULSE_ID,
-        "client_secret": config.SENDPULSE_SECRET
+        "client_id": os.getenv('SENDPULSE_ID'),
+        "client_secret": os.getenv('SENDPULSE_SECRET')
     }
     headers = {"Content-Type": "application/json"}
     response = requests.post(url, data=json.dumps(payload), headers=headers)
@@ -82,8 +83,8 @@ def send_email_via_sendpulse(subject, body, recipient_email):
             "text": body,
             "subject": subject,
             "from": {
-                "name": config.SENDPULSE_FROM_NAME,
-                "email": config.SENDPULSE_FROM_EMAIL
+                "name": os.getenv('SENDPULSE_FROM_NAME'),
+                "email": os.getenv('SENDPULSE_FROM_EMAIL')
             },
             "to": [
                 {
@@ -120,8 +121,6 @@ def send_email(update: Update, context: CallbackContext) -> None:
 # Commande par défaut pour afficher la liste des commandes lorsque l'utilisateur tape /
 def default_command(update: Update, context: CallbackContext) -> None:
     help_command(update, context)
-    
-
 
 # Fonction pour démarrer le bot et afficher le clavier interactif avec les options de commande
 def start(update: Update, context: CallbackContext) -> None:
@@ -322,7 +321,7 @@ def pay_with_crypto(update: Update, context: CallbackContext) -> None:
 
 # Fonction principale pour démarrer le bot
 def main() -> None:
-    updater = Updater(config.TELEGRAM_BOT_TOKEN)
+    updater = Updater(bot_token)
 
     dispatcher = updater.dispatcher
 

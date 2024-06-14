@@ -12,7 +12,7 @@ webhook_url = f"{vercel_app_url}/{telegram_bot_token}"
 
 # URL de l'API Telegram pour définir le webhook
 set_webhook_url = f"https://api.telegram.org/bot7341170491:AAGVNu7Iq0xWbQbqvjxXBOQHVi4mOo2h7Pc
-/setWebhook?url={webhook_url}"
+
 
 
 
