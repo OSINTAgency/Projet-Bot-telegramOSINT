@@ -10,3 +10,4 @@ tweepy==3.10.0
 Flask==2.0.2
 python-dotenv==0.19.2 
 pyTelegramBotAPI==4.2.0
+python==3.12.4
