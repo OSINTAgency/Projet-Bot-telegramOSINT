@@ -7,7 +7,7 @@
     "start": "python bot.py"
   },
   "dependencies": {
-    "heroku": "^8.1.9",
+    "heroku": "^8.11.5",
     "heroku-cli-util": "^5.10.12",
     "json": "^11.0.0"
   },
