@@ -71,65 +71,6 @@ def webhook():
     dispatcher.process_update(update)
     return 'ok'
 
-# Fonction pour obtenir le token d'authentification de SendPulse
-def get_sendpulse_token():
-    url = "https://api.sendpulse.com/oauth/access_token"
-    payload = {
-        "grant_type": "client_credentials",
-        "client_id": os.getenv('SENDPULSE_ID'),
-        "client_secret": os.getenv('SENDPULSE_SECRET')
-    }
-    headers = {"Content-Type": "application/json"}
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
-    return response.json().get("access_token")
-
-# Fonction pour envoyer des emails via SendPulse
-def send_email_via_sendpulse(subject, body, recipient_email):
-    token = get_sendpulse_token()
-    if not token:
-        return {"result": False, "error": "Unable to get token"}
-
-    url = "https://api.sendpulse.com/smtp/emails"
-    payload = {
-        "email": {
-            "html": body,
-            "text": body,
-            "subject": subject,
-            "from": {
-                "name": os.getenv('SENDPULSE_FROM_NAME'),
-                "email": os.getenv('SENDPULSE_FROM_EMAIL')
-            },
-            "to": [
-                {
-                    "name": "Recipient Name",
-                    "email": recipient_email
-                }
-            ]
-        }
-    }
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
-    return response.json()
-
-# Commande Telegram pour envoyer des emails
-def send_email(update: Update, context: CallbackContext) -> None:
-    if len(context.args) < 3:
-        update.message.reply_text('Usage: /send_email <email> <subject> <body>')
-        return
-
-    recipient_email = context.args[0]
-    subject = context.args[1]
-    body = ' '.join(context.args[2:])
-    
-    response = send_email_via_sendpulse(subject, body, recipient_email)
-    
-    if response.get("result"):
-        update.message.reply_text(f"Email envoyé à {recipient_email}")
-    else:
-        update.message.reply_text(f"Erreur lors de l'envoi de l'email: {response}")
 
 # Commande par défaut pour afficher la liste des commandes lorsque l'utilisateur tape /
 def default_command(update: Update, context: CallbackContext) -> None:
