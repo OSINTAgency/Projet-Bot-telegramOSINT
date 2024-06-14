@@ -1,1 +1,15 @@
-{}
+{
+  "name": "bot-telegram-osint",
+  "version": "1.0.0",
+  "description": "Un bot Telegram pour effectuer des recherches OSINT et générer des rapports détaillés.",
+  "main": "bot.py",
+  "scripts": {
+    "start": "python bot.py"
+  },
+  "dependencies": {
+    "json": "^11.0.0"
+  },
+  "devDependencies": {},
+  "author": "VotreNom",
+  "license": "ISC"
+}

@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, Dispatcher
 from flask import Flask, request
