@@ -1,8 +1,8 @@
 import requests
 import os
 
-# Remplacez par votre URL Vercel
-vercel_app_url = "https://cyberdetectivebot.vercel.app/"
+# Remplacez par votre URL Heroku
+heroku_app_url = "https://cyberdetectivebot-9951c4def877.herokuapp.com/"
 
 # Remplacez par votre token de bot Telegram
 telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN')  # Ou remplacez par votre token directement
@@ -10,7 +10,7 @@ if not telegram_bot_token:
     raise ValueError("TELEGRAM_BOT_TOKEN is not set in environment variables")
 
 # L'URL de votre webhook
-webhook_url = f"{vercel_app_url}{telegram_bot_token}"
+webhook_url = f"{heroku_app_url}{telegram_bot_token}"
 
 # URL de l'API Telegram pour définir le webhook
 set_webhook_url = f"https://api.telegram.org/bot{telegram_bot_token}/setWebhook?url={webhook_url}"

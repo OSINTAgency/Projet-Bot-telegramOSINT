@@ -6,3 +6,4 @@ data/reports/
 .vercel
 config.py
 
+node_modules

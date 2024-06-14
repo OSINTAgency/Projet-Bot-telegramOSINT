@@ -7,9 +7,10 @@
     "start": "python bot.py"
   },
   "dependencies": {
+    "heroku": "^8.1.9",
+    "heroku-cli-util": "^5.10.12",
     "json": "^11.0.0"
   },
-  "devDependencies": {},
   "author": "VotreNom",
   "license": "ISC"
 }
