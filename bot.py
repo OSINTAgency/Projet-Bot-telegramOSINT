@@ -28,6 +28,19 @@ bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
 if not bot_token:
     raise ValueError("TELEGRAM_BOT_TOKEN is not set in environment variables")
 
+app_url = os.getenv('APP_URL')  # Assurez-vous de définir cette variable dans vos environnements de déploiement
+if not app_url:
+    raise ValueError("APP_URL is not set in environment variables")
+
+# Définir l'URL du webhook
+set_webhook_url = f"https://api.telegram.org/bot{bot_token}/setWebhook?url={app_url}/{bot_token}"
+response = requests.get(set_webhook_url)
+if response.status_code == 200:
+    print("Webhook set successfully")
+else:
+    print(f"Failed to set webhook: {response.text}")
+
+# Initialisation du bot
 bot = telegram.Bot(token=bot_token)
 dispatcher = Dispatcher(bot, None, workers=0)
 
