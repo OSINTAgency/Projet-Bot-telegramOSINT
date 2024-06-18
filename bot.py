@@ -7,6 +7,7 @@ import telegram
 import whois
 import requests
 import json
+from urllib.parse import quote
 
 # Importer les fonctions utilitaires
 from utils.twitter import search_twitter
