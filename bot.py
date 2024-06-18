@@ -22,6 +22,8 @@ from utils.dnseum import dnseum_query
 from utils.bile_suite import bile_suite_query
 from utils.tld_expand import tld_expand_query
 
+load_dotenv()
+
 app = Flask(__name__)
 
 # Obtenir le token de bot à partir des variables d'environnement
@@ -72,11 +74,6 @@ def webhook():
     dispatcher.process_update(update)
     return 'ok'
 
-
-# Commande par défaut pour afficher la liste des commandes lorsque l'utilisateur tape /
-def default_command(update: Update, context: CallbackContext) -> None:
-    help_command(update, context)
-
 # Fonction pour démarrer le bot et afficher le clavier interactif avec les options de commande
 def start(update: Update, context: CallbackContext) -> None:
     keyboard = [
@@ -104,40 +101,30 @@ def button(update: Update, context: CallbackContext) -> None:
     query.answer()
     command = query.data
 
-    if command == 'whois':
-        query.edit_message_text(text="Utilisez la commande /search_whois <domain> pour effectuer une recherche Whois.")
-    elif command == 'twitter':
-        query.edit_message_text(text="Utilisez la commande /search_twitter <query> pour effectuer une recherche sur Twitter.")
-    elif command == 'news':
-        query.edit_message_text(text="Utilisez la commande /search_news <query> pour effectuer une recherche d'actualités.")
-    elif command == 'financial':
-        query.edit_message_text(text="Utilisez la commande /search_financial <company> pour effectuer une recherche financière.")
-    elif command == 'search_ip':
-        query.edit_message_text(text="Utilisez la commande /search_ip <ip_address> pour effectuer une recherche sur une adresse IP.")
-    elif command == 'search_breaches':
-        query.edit_message_text(text="Utilisez la commande /search_breaches <email> pour rechercher des fuites de données pour une adresse email.")
-    elif command == 'search_engine':
-        query.edit_message_text(text="Utilisez la commande /search_engine <query> pour rechercher sur les moteurs de recherche.")
-    elif command == 'host':
-        query.edit_message_text(text="Utilisez la commande /host <domain> pour obtenir des informations DNS avec l'outil host.")
-    elif command == 'nslookup':
-        query.edit_message_text(text="Utilisez la commande /nslookup <query> pour obtenir des informations DNS avec l'outil nslookup.")
-    elif command == 'dnseum':
-        query.edit_message_text(text="Utilisez la commande /dnseum <query> pour utiliser l'outil dnseum.")
-    elif command == 'bile_suite':
-        query.edit_message_text(text="Utilisez la commande /bile_suite <query> pour utiliser l'outil bile-suite.")
-    elif command == 'tld_expand':
-        query.edit_message_text(text="Utilisez la commande /tld_expand <query> pour obtenir des informations sur les TLD avec l'outil tld-expand.")
-    elif command == 'report':
-        query.edit_message_text(text="Utilisez la commande /report <query> pour générer un rapport détaillé.")
-    elif command == 'history':
-        query.edit_message_text(text="Utilisez la commande /history pour afficher l'historique de vos recherches.")
-    elif command == 'subscribe':
-        query.edit_message_text(text="Utilisez la commande /subscribe <query> pour vous abonner aux alertes pour une requête spécifique.")
-    elif command == 'unsubscribe':
-        query.edit_message_text(text="Utilisez la commande /unsubscribe <query> pour vous désabonner des alertes.")
-    elif command == 'pay_with_crypto':
-        query.edit_message_text(text="Utilisez la commande /pay_with_crypto <plan> pour procéder au paiement en crypto pour les fonctionnalités premium.")
+    command_mapping = {
+        'whois': "/search_whois <domain>",
+        'twitter': "/search_twitter <query>",
+        'news': "/search_news <query>",
+        'financial': "/search_financial <company>",
+        'search_ip': "/search_ip <ip_address>",
+        'search_breaches': "/search_breaches <email>",
+        'search_engine': "/search_engine <query>",
+        'host': "/host <domain>",
+        'nslookup': "/nslookup <query>",
+        'dnseum': "/dnseum <query>",
+        'bile_suite': "/bile_suite <query>",
+        'tld_expand': "/tld_expand <query>",
+        'report': "/report <query>",
+        'history': "/history",
+        'subscribe': "/subscribe <query>",
+        'unsubscribe': "/unsubscribe <query>",
+        'pay_with_crypto': "/pay_with_crypto <plan>"
+    }
+
+    if command in command_mapping:
+        query.edit_message_text(text=f"Utilisez la commande {command_mapping[command]}.")
+
+dispatcher.add_handler(CallbackQueryHandler(button))
 
 # Fonction pour afficher l'aide
 def help_command(update: Update, context: CallbackContext) -> None:
@@ -166,6 +153,8 @@ def help_command(update: Update, context: CallbackContext) -> None:
     )
     update.message.reply_text(help_text)
 
+dispatcher.add_handler(CommandHandler("help", help_command))
+
 # Fonction pour effectuer une recherche générique OSINT
 def search(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -176,6 +165,8 @@ def search(update: Update, context: CallbackContext) -> None:
     results = search_engine(query)
     update.message.reply_text(f"Résultats de la recherche pour '{query}':\n{results}")
 
+dispatcher.add_handler(CommandHandler("search", search))
+
 # Fonctions de recherche spécifiques
 def search_twitter_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -184,12 +175,7 @@ def search_twitter_command(update: Update, context: CallbackContext) -> None:
         return
     search_twitter(update, context, query)
 
-def search_whois_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir un domaine pour la recherche Whois.")
-        return
-    search_whois(update, context, query)
+dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
 
 def search_ip_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -198,12 +184,16 @@ def search_ip_command(update: Update, context: CallbackContext) -> None:
         return
     search_ip(update, context, query)
 
+dispatcher.add_handler(CommandHandler("search_ip", search_ip_command))
+
 def search_breaches_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
     if not query:
         update.message.reply_text("Veuillez fournir une adresse email pour la recherche de fuites de données.")
         return
     search_breaches(update, context, query)
+
+dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command))
 
 def search_news_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -212,12 +202,16 @@ def search_news_command(update: Update, context: CallbackContext) -> None:
         return
     search_news(update, context, query)
 
+dispatcher.add_handler(CommandHandler("search_news", search_news_command))
+
 def search_financial_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
     if not query:
         update.message.reply_text("Veuillez fournir une entreprise pour la recherche financière.")
         return
     search_financial(update, context, query)
+
+dispatcher.add_handler(CommandHandler("search_financial", search_financial_command))
 
 def host_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -226,12 +220,16 @@ def host_command(update: Update, context: CallbackContext) -> None:
         return
     host_lookup(update, context, query)
 
+dispatcher.add_handler(CommandHandler("host", host_command))
+
 def nslookup_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
     if not query:
         update.message.reply_text("Veuillez fournir une requête pour l'outil nslookup.")
         return
     nslookup_query(update, context, query)
+
+dispatcher.add_handler(CommandHandler("nslookup", nslookup_command))
 
 def dnseum_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -240,12 +238,16 @@ def dnseum_command(update: Update, context: CallbackContext) -> None:
         return
     dnseum_query(update, context, query)
 
+dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
+
 def bile_suite_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
     if not query:
         update.message.reply_text("Veuillez fournir une requête pour l'outil bile-suite.")
         return
     bile_suite_query(update, context, query)
+
+dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_command))
 
 def tld_expand_command(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -254,25 +256,32 @@ def tld_expand_command(update: Update, context: CallbackContext) -> None:
         return
     tld_expand_query(update, context, query)
 
+dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
+
 def generate_report(update: Update, context: CallbackContext) -> None:
-    # Implémentation de la génération de rapport
     update.message.reply_text("Fonction de génération de rapport non encore implémentée.")
 
+dispatcher.add_handler(CommandHandler("report", generate_report))
+
 def show_history(update: Update, context: CallbackContext) -> None:
-    # Implémentation de l'affichage de l'historique
     update.message.reply_text("Fonction d'affichage de l'historique non encore implémentée.")
 
+dispatcher.add_handler(CommandHandler("history", show_history))
+
 def subscribe_alerts(update: Update, context: CallbackContext) -> None:
-    # Implémentation de l'abonnement aux alertes
     update.message.reply_text("Fonction d'abonnement aux alertes non encore implémentée.")
 
+dispatcher.add_handler(CommandHandler("subscribe", subscribe_alerts))
+
 def unsubscribe_alerts(update: Update, context: CallbackContext) -> None:
-    # Implémentation du désabonnement aux alertes
     update.message.reply_text("Fonction de désabonnement aux alertes non encore implémentée.")
 
+dispatcher.add_handler(CommandHandler("unsubscribe", unsubscribe_alerts))
+
 def pay_with_crypto(update: Update, context: CallbackContext) -> None:
-    # Implémentation du paiement en crypto
     update.message.reply_text("Fonction de paiement en crypto non encore implémentée.")
+
+dispatcher.add_handler(CommandHandler("pay_with_crypto", pay_with_crypto))
 
 # Fonction principale pour démarrer le bot
 def main() -> None:
