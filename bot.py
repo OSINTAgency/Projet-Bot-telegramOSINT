@@ -24,6 +24,14 @@ from utils.tld_expand import tld_expand_query
 
 app = Flask(__name__)
 
+@app.route('/')
+def hello():
+    return "Hello World!"
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
 # Obtenir le token de bot à partir des variables d'environnement
 bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
 if not bot_token:
