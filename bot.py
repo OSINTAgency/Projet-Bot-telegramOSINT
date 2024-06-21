@@ -1,7 +1,7 @@
 import logging
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, Dispatcher
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 from flask import Flask, request
 import os
 import telegram
@@ -9,6 +9,7 @@ import whois
 import requests
 import json
 from urllib.parse import quote
+from queue import Queue
 
 # Importer les fonctions utilitaires
 from utils.twitter import search_twitter
@@ -24,7 +25,8 @@ from utils.dnseum import dnseum_query
 from utils.bile_suite import bile_suite_query
 from utils.tld_expand import tld_expand_query
 
-load_dotenv()
+
+# Initialiser Flask
 
 app = Flask(__name__)
 
@@ -47,7 +49,9 @@ else:
 
 # Initialisation du bot
 bot = telegram.Bot(token=bot_token)
-dispatcher = Dispatcher(bot, None, workers=0)
+update_queue = Queue()
+updater = Updater(bot=bot, update_queue=update_queue)
+dispatcher = updater.bot.dispatcher
 
 # Fonction start
 def start(update: Update, context: CallbackContext) -> None:
@@ -287,7 +291,7 @@ dispatcher.add_handler(CommandHandler("pay_with_crypto", pay_with_crypto))
 
 # Fonction principale pour démarrer le bot
 def main() -> None:
-    updater = Updater(bot_token)
+    updater = Updater(bot_token, use_context=True)
 
     dispatcher = updater.dispatcher
 

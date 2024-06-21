@@ -1,6 +1,6 @@
+import whois
 from telegram import Update
 from telegram.ext import CallbackContext
-import whois
 
 def search_whois(update: Update, context: CallbackContext) -> None:
     domain = ' '.join(context.args)
@@ -9,7 +9,6 @@ def search_whois(update: Update, context: CallbackContext) -> None:
         return
 
     try:
-        update.message.reply_text(f"Recherche WHOIS pour le domaine: {domain}")
         domain_info = whois.whois(domain)
         update.message.reply_text(f"Whois Data pour '{domain}':\n{domain_info}")
     except AttributeError as attr_err:

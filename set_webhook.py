@@ -5,7 +5,7 @@ import os
 heroku_app_url = "https://cyberdetectivebot-9951c4def877.herokuapp.com/"
 
 # Remplacez par votre token de bot Telegram
-telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN')  # Ou remplacez par votre token directement
+telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
 if not telegram_bot_token:
     raise ValueError("TELEGRAM_BOT_TOKEN is not set in environment variables")
 
