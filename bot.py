@@ -47,11 +47,10 @@ if response.status_code == 200:
 else:
     print(f"Failed to set webhook: {response.text}")
 
-# Initialisation du bot
-bot = telegram.Bot(token=bot_token)
-update_queue = Queue()
-updater = Updater(bot=bot, update_queue=update_queue)
-dispatcher = updater.bot.dispatcher
+# Initialiser le bot
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+updater = Updater(TOKEN, use_context=True, workers=4)  # Utiliser 4 workers
+dispatcher: Dispatcher = updater.dispatcher
 
 # Fonction start
 def start(update: Update, context: CallbackContext) -> None:
@@ -319,6 +318,11 @@ def main() -> None:
 
     updater.start_polling()
     updater.idle()
+
+# Route de test
+@app.route('/')
+def index():
+    return 'Hello, this is the bot server.'
 
 if __name__ == '__main__':
     main()
