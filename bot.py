@@ -8,7 +8,6 @@ import telegram
 import whois
 import requests
 import json
-import stripe
 from coinbase_commerce.client import Client
 from urllib.parse import quote
 from queue import Queue
@@ -66,7 +65,6 @@ def help_command(update: Update, context: CallbackContext) -> None:
         "/dnseum <query> - Utilise l'outil dnseum\n"
         "/bile_suite <query> - Utilise l'outil bile-suite\n"
         "/tld_expand <query> - Utilise l'outil tld-expand pour obtenir des informations sur les TLD\n"
-        "/pay_with_stripe <amount> - Payer avec Stripe\n"
         "/pay_with_coinbase <amount> - Payer avec Coinbase Commerce\n"
     )
     update.message.reply_text(help_text)
@@ -98,38 +96,6 @@ def bile_suite_command(update: Update, context: CallbackContext) -> None:
 
 def tld_expand_command(update: Update, context: CallbackContext) -> None:
     tld_expand_query(update, context)
-
-# Fonction de paiement avec Stripe
-def pay_with_stripe(update: Update, context: CallbackContext) -> None:
-    amount = ' '.join(context.args)
-    if not amount:
-        update.message.reply_text('Veuillez fournir un montant pour le paiement.')
-        return
-    
-    stripe.api_key = config.STRIPE_API_KEY
-    
-    try:
-        # Créer un objet Checkout Session pour le paiement
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': 'OSINT Bot Payment',
-                    },
-                    'unit_amount': int(float(amount) * 100),  # Montant en cents
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=f"{app_url}/success",
-            cancel_url=f"{app_url}/cancel",
-        )
-        
-        update.message.reply_text(f"Veuillez procéder au paiement en cliquant sur le lien suivant : {session.url}")
-    except Exception as e:
-        update.message.reply_text(f"Erreur lors de la création de la session de paiement : {str(e)}")
 
 # Fonction de paiement avec Coinbase Commerce
 def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
@@ -170,7 +136,6 @@ dispatcher.add_handler(CommandHandler("nslookup", nslookup_command))
 dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
 dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_command))
 dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
-dispatcher.add_handler(CommandHandler("pay_with_stripe", pay_with_stripe))
 dispatcher.add_handler(CommandHandler("pay_with_coinbase", pay_with_coinbase))
 
 if __name__ == '__main__':
