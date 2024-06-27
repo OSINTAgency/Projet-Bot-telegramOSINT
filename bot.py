@@ -1,5 +1,5 @@
 import logging
-from dotenv import load_dotenv
+import config
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, Dispatcher
 from flask import Flask, request
@@ -8,22 +8,10 @@ import telegram
 import whois
 import requests
 import json
+import stripe
+from coinbase_commerce.client import Client
 from urllib.parse import quote
 from queue import Queue
-
-# Importer les fonctions utilitaires
-from utils.twitter import search_twitter
-from utils.whois import search_whois
-from utils.ip import search_ip
-from utils.breaches import search_breaches
-from utils.search_engine import search_engine
-from utils.financial import search_financial
-from utils.news import search_news
-from utils.host import host_lookup
-from utils.nslookup import nslookup_query
-from utils.dnseum import dnseum_query
-from utils.bile_suite import bile_suite_query
-from utils.tld_expand import tld_expand_query
 
 # Initialiser Flask
 app = Flask(__name__)
@@ -32,18 +20,20 @@ app = Flask(__name__)
 def hello():
     return "Hello World!"
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+@app.route('/{}'.format(config.TELEGRAM_BOT_TOKEN), methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return 'ok'
 
-# Obtenir le token de bot à partir des variables d'environnement
-bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+# Obtenir les configurations depuis config.py
+bot_token = config.TELEGRAM_BOT_TOKEN
 if not bot_token:
-    raise ValueError("TELEGRAM_BOT_TOKEN is not set in environment variables")
+    raise ValueError("TELEGRAM_BOT_TOKEN is not set in config.py")
 
-app_url = os.getenv('APP_URL')  # Assurez-vous de définir cette variable dans vos environnements de déploiement
+app_url = config.APP_URL
 if not app_url:
-    raise ValueError("APP_URL is not set in environment variables")
+    raise ValueError("APP_URL is not set in config.py")
 
 # Définir l'URL du webhook
 set_webhook_url = f"https://api.telegram.org/bot{bot_token}/setWebhook?url={app_url}/{bot_token}"
@@ -57,136 +47,130 @@ else:
 bot = telegram.Bot(token=bot_token)
 dispatcher = Dispatcher(bot, None, workers=0)
 
-# Fonction de démarrage (renommée pour éviter les conflits)
+# Fonction de démarrage
 def start_command(update: Update, context: CallbackContext) -> None:
-    keyboard = [
-        [
-            InlineKeyboardButton("Recherche Whois", callback_data='whois'),
-            InlineKeyboardButton("Recherche Twitter", callback_data='twitter'),
-        ],
-        [
-            InlineKeyboardButton("Recherche d'Actualités", callback_data='news'),
-            InlineKeyboardButton("Recherche Financière", callback_data='financial')
-        ]
-    ]
+    update.message.reply_text('Bonjour! Utilisez /help pour voir les commandes disponibles.')
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    welcome_message = (
-        "Bonjour! Je suis votre bot OSINT. Voici quelques commandes pour commencer :\n"
-        "Choisissez une option ci-dessous :"
-    )
-    update.message.reply_text(welcome_message, reply_markup=reply_markup)
-
-# Fonction de recherche WHOIS
-def search_whois_command(update: Update, context: CallbackContext) -> None:
-    if not context.args:
-        update.message.reply_text('Usage: /search_whois <domain>')
-        return
-
-    domain = context.args[0]
-    try:
-        domain_info = whois.whois(domain)
-        update.message.reply_text(f"Informations WHOIS pour {domain}:\n{domain_info}")
-    except Exception as e:
-        update.message.reply_text(f"Erreur lors de la recherche WHOIS: {str(e)}")
-
-# Fonction pour gérer les boutons du clavier interactif
-def button(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    command = query.data
-
-    if command == 'whois':
-        query.edit_message_text(text="Utilisez la commande /search_whois <domain> pour effectuer une recherche Whois.")
-    elif command == 'twitter':
-        query.edit_message_text(text="Utilisez la commande /search_twitter <query> pour effectuer une recherche sur Twitter.")
-    elif command == 'news':
-        query.edit_message_text(text="Utilisez la commande /search_news <query> pour effectuer une recherche d'actualités.")
-    elif command == 'financial':
-        query.edit_message_text(text="Utilisez la commande /search_financial <company> pour effectuer une recherche financière.")
-    elif command == 'search_ip':
-        query.edit_message_text(text="Utilisez la commande /search_ip <ip_address> pour effectuer une recherche sur une adresse IP.")
-    elif command == 'search_breaches':
-        query.edit_message_text(text="Utilisez la commande /search_breaches <email> pour rechercher des fuites de données pour une adresse email.")
-    elif command == 'search_engine':
-        query.edit_message_text(text="Utilisez la commande /search_engine <query> pour rechercher sur les moteurs de recherche.")
-    elif command == 'host':
-        query.edit_message_text(text="Utilisez la commande /host <domain> pour obtenir des informations DNS avec l'outil host.")
-    elif command == 'nslookup':
-        query.edit_message_text(text="Utilisez la commande /nslookup <query> pour obtenir des informations DNS avec l'outil nslookup.")
-    elif command == 'dnseum':
-        query.edit_message_text(text="Utilisez la commande /dnseum <query> pour utiliser l'outil dnseum.")
-    elif command == 'bile_suite':
-        query.edit_message_text(text="Utilisez la commande /bile_suite <query> pour utiliser l'outil bile-suite.")
-    elif command == 'tld_expand':
-        query.edit_message_text(text="Utilisez la commande /tld_expand <query> pour obtenir des informations sur les TLD avec l'outil tld-expand.")
-    elif command == 'report':
-        query.edit_message_text(text="Utilisez la commande /report <query> pour générer un rapport détaillé.")
-    elif command == 'history':
-        query.edit_message_text(text="Utilisez la commande /history pour afficher l'historique de vos recherches.")
-    elif command == 'subscribe':
-        query.edit_message_text(text="Utilisez la commande /subscribe <query> pour vous abonner aux alertes pour une requête spécifique.")
-    elif command == 'unsubscribe':
-        query.edit_message_text(text="Utilisez la commande /unsubscribe <query> pour vous désabonner des alertes.")
-    elif command == 'pay_with_crypto':
-        query.edit_message_text(text="Utilisez la commande /pay_with_crypto <plan> pour procéder au paiement en crypto pour les fonctionnalités premium.")
-
-# Fonction pour afficher l'aide
+# Fonction d'aide
 def help_command(update: Update, context: CallbackContext) -> None:
     help_text = (
-        "Voici les commandes disponibles:\n"
         "/start - Démarre le bot\n"
         "/help - Affiche cette aide\n"
-        "/search <query> - Effectue une recherche OSINT\n"
         "/search_twitter <query> - Recherche sur Twitter\n"
         "/search_whois <domain> - Recherche Whois pour un domaine\n"
         "/search_ip <ip_address> - Recherche d'informations sur une adresse IP\n"
         "/search_breaches <email> - Recherche de fuites de données pour une adresse email\n"
-        "/search_engine <query> - Recherche sur les moteurs de recherche\n"
-        "/search_financial <company> - Recherche financière sur une entreprise\n"
-        "/search_news <query> - Recherche d'actualités sur Google Actualités\n"
         "/host <domain> - Utilise l'outil host pour obtenir des informations DNS\n"
         "/nslookup <query> - Utilise l'outil nslookup pour obtenir des informations DNS\n"
         "/dnseum <query> - Utilise l'outil dnseum\n"
         "/bile_suite <query> - Utilise l'outil bile-suite\n"
         "/tld_expand <query> - Utilise l'outil tld-expand pour obtenir des informations sur les TLD\n"
-        "/report <query> - Génère un rapport détaillé\n"
-        "/history - Affiche l'historique de vos recherches\n"
-        "/subscribe <query> - Abonnez-vous aux alertes pour une requête spécifique\n"
-        "/unsubscribe <query> - Désabonnez-vous des alertes\n"
-        "/pay_with_crypto <plan> - Procédez au paiement en crypto pour les fonctionnalités premium\n"
+        "/pay_with_stripe <amount> - Payer avec Stripe\n"
+        "/pay_with_coinbase <amount> - Payer avec Coinbase Commerce\n"
     )
     update.message.reply_text(help_text)
 
-# Fonction pour démarrer le bot
-def main() -> None:
-    updater = Updater(bot_token)
+# Commandes spécifiques
+def search_twitter_command(update: Update, context: CallbackContext) -> None:
+    search_twitter(update, context)
 
-    dispatcher = updater.dispatcher
+def search_whois_command(update: Update, context: CallbackContext) -> None:
+    search_whois(update, context)
 
-    dispatcher.add_handler(CommandHandler("start", start_command))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CallbackQueryHandler(button))
-    dispatcher.add_handler(CommandHandler("search", search))
-    dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
-    dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
-    dispatcher.add_handler(CommandHandler("search_news", search_news_command))
-    dispatcher.add_handler(CommandHandler("search_financial", search_financial_command))
-    dispatcher.add_handler(CommandHandler("search_ip", search_ip_command))
-    dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command))
-    dispatcher.add_handler(CommandHandler("search_engine", search))
-    dispatcher.add_handler(CommandHandler("host", host_command))
-    dispatcher.add_handler(CommandHandler("nslookup", nslookup_command))
-    dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
-    dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_command))
-    dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
-    dispatcher.add_handler(CommandHandler("report", generate_report))
-    dispatcher.add_handler(CommandHandler("history", show_history))
-    dispatcher.add_handler(CommandHandler("subscribe", subscribe_alerts))
-    dispatcher.add_handler(CommandHandler("unsubscribe", unsubscribe_alerts))
-    dispatcher.add_handler(CommandHandler("pay_with_crypto", pay_with_crypto))
+def search_ip_command(update: Update, context: CallbackContext) -> None:
+    search_ip(update, context)
 
-    # Démarrer le bot
-    updater.start_polling()
-    updater.idle()
+def search_breaches_command(update: Update, context: CallbackContext) -> None:
+    search_breaches(update, context)
+
+def host_command(update: Update, context: CallbackContext) -> None:
+    host_lookup(update, context)
+
+def nslookup_command(update: Update, context: CallbackContext) -> None:
+    nslookup_query(update, context)
+
+def dnseum_command(update: Update, context: CallbackContext) -> None:
+    dnseum_query(update, context)
+
+def bile_suite_command(update: Update, context: CallbackContext) -> None:
+    bile_suite_query(update, context)
+
+def tld_expand_command(update: Update, context: CallbackContext) -> None:
+    tld_expand_query(update, context)
+
+# Fonction de paiement avec Stripe
+def pay_with_stripe(update: Update, context: CallbackContext) -> None:
+    amount = ' '.join(context.args)
+    if not amount:
+        update.message.reply_text('Veuillez fournir un montant pour le paiement.')
+        return
+    
+    stripe.api_key = config.STRIPE_API_KEY
+    
+    try:
+        # Créer un objet Checkout Session pour le paiement
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': 'OSINT Bot Payment',
+                    },
+                    'unit_amount': int(float(amount) * 100),  # Montant en cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=f"{app_url}/success",
+            cancel_url=f"{app_url}/cancel",
+        )
+        
+        update.message.reply_text(f"Veuillez procéder au paiement en cliquant sur le lien suivant : {session.url}")
+    except Exception as e:
+        update.message.reply_text(f"Erreur lors de la création de la session de paiement : {str(e)}")
+
+# Fonction de paiement avec Coinbase Commerce
+def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
+    amount = ' '.join(context.args)
+    if not amount:
+        update.message.reply_text('Veuillez fournir un montant pour le paiement.')
+        return
+    
+    coinbase_client = Client(api_key=config.COINBASE_API_KEY)
+    
+    try:
+        # Créer une charge pour le paiement
+        charge = coinbase_client.charge.create(
+            name='OSINT Bot Payment',
+            description='Paiement pour les services OSINT Bot',
+            local_price={
+                'amount': amount,
+                'currency': 'USD'
+            },
+            pricing_type='fixed_price',
+            redirect_url=f"{app_url}/success",
+            cancel_url=f"{app_url}/cancel",
+        )
+        
+        update.message.reply_text(f"Veuillez procéder au paiement en cliquant sur le lien suivant : {charge['hosted_url']}")
+    except Exception as e:
+        update.message.reply_text(f"Erreur lors de la création de la charge de paiement : {str(e)}")
+
+# Initialisation du dispatcher
+dispatcher.add_handler(CommandHandler("start", start_command))
+dispatcher.add_handler(CommandHandler("help", help_command))
+dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
+dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
+dispatcher.add_handler(CommandHandler("search_ip", search_ip_command))
+dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command))
+dispatcher.add_handler(CommandHandler("host", host_command))
+dispatcher.add_handler(CommandHandler("nslookup", nslookup_command))
+dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
+dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_command))
+dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
+dispatcher.add_handler(CommandHandler("pay_with_stripe", pay_with_stripe))
+dispatcher.add_handler(CommandHandler("pay_with_coinbase", pay_with_coinbase))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

@@ -10,7 +10,6 @@ whois==0.9.13
 ipwhois==1.2.0
 stripe==2.56.0
 coinbase-commerce==1.0.0
-beautifulsoup4==4.9.3
 dnspython==2.0.0
 tweepy==3.10.0
 gunicorn
