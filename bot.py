@@ -1,3 +1,4 @@
+import logging
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, Dispatcher
@@ -7,6 +8,8 @@ import telegram
 import whois
 import requests
 import json
+from urllib.parse import quote
+from queue import Queue
 
 # Importer les fonctions utilitaires
 from utils.twitter import search_twitter
@@ -22,6 +25,7 @@ from utils.dnseum import dnseum_query
 from utils.bile_suite import bile_suite_query
 from utils.tld_expand import tld_expand_query
 
+# Initialiser Flask
 app = Flask(__name__)
 
 @app.route('/')
@@ -53,40 +57,8 @@ else:
 bot = telegram.Bot(token=bot_token)
 dispatcher = Dispatcher(bot, None, workers=0)
 
-# Fonction start
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Bonjour! Je suis votre bot.')
-
-# Fonction de recherche WHOIS
-def search_whois_command(update: Update, context: CallbackContext) -> None:
-    if not context.args:
-        update.message.reply_text('Usage: /search_whois <domain>')
-        return
-
-    domain = context.args[0]
-    try:
-        domain_info = whois.whois(domain)
-        update.message.reply_text(f"Informations WHOIS pour {domain}:\n{domain_info}")
-    except Exception as e:
-        update.message.reply_text(f"Erreur lors de la recherche WHOIS: {str(e)}")
-
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
-
-# Route pour le webhook
-@app.route(f'/{bot_token}', methods=['POST'])
-def webhook():
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return 'ok'
-
-
-# Commande par défaut pour afficher la liste des commandes lorsque l'utilisateur tape /
-def default_command(update: Update, context: CallbackContext) -> None:
-    help_command(update, context)
-
-# Fonction pour démarrer le bot et afficher le clavier interactif avec les options de commande
-def start(update: Update, context: CallbackContext) -> None:
+# Fonction de démarrage (renommée pour éviter les conflits)
+def start_command(update: Update, context: CallbackContext) -> None:
     keyboard = [
         [
             InlineKeyboardButton("Recherche Whois", callback_data='whois'),
@@ -105,6 +77,19 @@ def start(update: Update, context: CallbackContext) -> None:
         "Choisissez une option ci-dessous :"
     )
     update.message.reply_text(welcome_message, reply_markup=reply_markup)
+
+# Fonction de recherche WHOIS
+def search_whois_command(update: Update, context: CallbackContext) -> None:
+    if not context.args:
+        update.message.reply_text('Usage: /search_whois <domain>')
+        return
+
+    domain = context.args[0]
+    try:
+        domain_info = whois.whois(domain)
+        update.message.reply_text(f"Informations WHOIS pour {domain}:\n{domain_info}")
+    except Exception as e:
+        update.message.reply_text(f"Erreur lors de la recherche WHOIS: {str(e)}")
 
 # Fonction pour gérer les boutons du clavier interactif
 def button(update: Update, context: CallbackContext) -> None:
@@ -174,127 +159,18 @@ def help_command(update: Update, context: CallbackContext) -> None:
     )
     update.message.reply_text(help_text)
 
-# Fonction pour effectuer une recherche générique OSINT
-def search(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une requête pour la recherche.")
-        return
-
-    results = search_engine(query)
-    update.message.reply_text(f"Résultats de la recherche pour '{query}':\n{results}")
-
-# Fonctions de recherche spécifiques
-def search_twitter_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une requête pour la recherche sur Twitter.")
-        return
-    search_twitter(update, context, query)
-
-def search_whois_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir un domaine pour la recherche Whois.")
-        return
-    search_whois(update, context, query)
-
-def search_ip_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une adresse IP pour la recherche.")
-        return
-    search_ip(update, context, query)
-
-def search_breaches_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une adresse email pour la recherche de fuites de données.")
-        return
-    search_breaches(update, context, query)
-
-def search_news_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une requête pour la recherche d'actualités.")
-        return
-    search_news(update, context, query)
-
-def search_financial_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une entreprise pour la recherche financière.")
-        return
-    search_financial(update, context, query)
-
-def host_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir un domaine pour l'outil host.")
-        return
-    host_lookup(update, context, query)
-
-def nslookup_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une requête pour l'outil nslookup.")
-        return
-    nslookup_query(update, context, query)
-
-def dnseum_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une requête pour l'outil dnseum.")
-        return
-    dnseum_query(update, context, query)
-
-def bile_suite_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une requête pour l'outil bile-suite.")
-        return
-    bile_suite_query(update, context, query)
-
-def tld_expand_command(update: Update, context: CallbackContext) -> None:
-    query = ' '.join(context.args)
-    if not query:
-        update.message.reply_text("Veuillez fournir une requête pour l'outil tld-expand.")
-        return
-    tld_expand_query(update, context, query)
-
-def generate_report(update: Update, context: CallbackContext) -> None:
-    # Implémentation de la génération de rapport
-    update.message.reply_text("Fonction de génération de rapport non encore implémentée.")
-
-def show_history(update: Update, context: CallbackContext) -> None:
-    # Implémentation de l'affichage de l'historique
-    update.message.reply_text("Fonction d'affichage de l'historique non encore implémentée.")
-
-def subscribe_alerts(update: Update, context: CallbackContext) -> None:
-    # Implémentation de l'abonnement aux alertes
-    update.message.reply_text("Fonction d'abonnement aux alertes non encore implémentée.")
-
-def unsubscribe_alerts(update: Update, context: CallbackContext) -> None:
-    # Implémentation du désabonnement aux alertes
-    update.message.reply_text("Fonction de désabonnement aux alertes non encore implémentée.")
-
-def pay_with_crypto(update: Update, context: CallbackContext) -> None:
-    # Implémentation du paiement en crypto
-    update.message.reply_text("Fonction de paiement en crypto non encore implémentée.")
-
-# Fonction principale pour démarrer le bot
+# Fonction pour démarrer le bot
 def main() -> None:
     updater = Updater(bot_token)
 
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(CommandHandler("search", search))
     dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
-    dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
-    dispatcher.add_handler(CommandHandler("search_news", search_news_command))
+    dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))dispatcher.add_handler(CommandHandler("search_news", search_news_command))
     dispatcher.add_handler(CommandHandler("search_financial", search_financial_command))
     dispatcher.add_handler(CommandHandler("search_ip", search_ip_command))
     dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command))
@@ -310,6 +186,7 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler("unsubscribe", unsubscribe_alerts))
     dispatcher.add_handler(CommandHandler("pay_with_crypto", pay_with_crypto))
 
+    # Démarrer le bot
     updater.start_polling()
     updater.idle()
 
