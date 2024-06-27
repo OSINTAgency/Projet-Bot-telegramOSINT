@@ -163,7 +163,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
 def main() -> None:
     updater = Updater(bot_token)
 
-    dispatcher = updater.dispatcher
+   dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
