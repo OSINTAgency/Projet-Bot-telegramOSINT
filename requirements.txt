@@ -11,4 +11,4 @@ ipwhois==1.2.0
 coinbase-commerce==1.0.0
 dnspython==2.0.0
 tweepy==3.10.0
-gunicorn
+gunicorn==20.0.4
