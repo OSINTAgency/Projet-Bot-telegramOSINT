@@ -163,14 +163,15 @@ def help_command(update: Update, context: CallbackContext) -> None:
 def main() -> None:
     updater = Updater(bot_token)
 
-   dispatcher = updater.dispatcher
+    dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CallbackQueryHandler(button))
     dispatcher.add_handler(CommandHandler("search", search))
     dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
-    dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))dispatcher.add_handler(CommandHandler("search_news", search_news_command))
+    dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
+    dispatcher.add_handler(CommandHandler("search_news", search_news_command))
     dispatcher.add_handler(CommandHandler("search_financial", search_financial_command))
     dispatcher.add_handler(CommandHandler("search_ip", search_ip_command))
     dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command))
@@ -189,6 +190,3 @@ def main() -> None:
     # Démarrer le bot
     updater.start_polling()
     updater.idle()
-
-if __name__ == '__main__':
-    main()
