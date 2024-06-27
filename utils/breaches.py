@@ -1,25 +1,45 @@
 import requests
 from telegram import Update
 from telegram.ext import CallbackContext
-import config
+import logging
+
+# Configure logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+LEAKCHECK_API_KEY = '7c129e1d6a22bfe3296440ec1a17cbcaeaa8ca4b'
 
 def search_breaches(update: Update, context: CallbackContext) -> None:
-    email = ' '.join(context.args)
-    if not email:
-        update.message.reply_text('Veuillez fournir une adresse email pour la recherche de fuites de données.')
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text('Veuillez fournir une adresse email ou un nom d\'utilisateur pour la recherche.')
         return
 
     try:
-        hibp_api_url = f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}"
-        headers = {"hibp-api-key": config.HIBP_API_KEY}
-        response = requests.get(hibp_api_url, headers=headers)
-        if response.status_code == 200:
-            breach_data = response.json()
-            formatted_data = json.dumps(breach_data, indent=2)
-            update.message.reply_text(f"Données compromises pour '{email}':\n{formatted_data}")
-        elif response.status_code == 404:
-            update.message.reply_text("Aucune fuite de données trouvée pour cet email.")
+        headers = {
+            'Authorization': f'Bearer {LEAKCHECK_API_KEY}'
+        }
+        api_url = f"https://leakcheck.net/api?key={LEAKCHECK_API_KEY}&check={query}"
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        
+        breach_data = response.json()
+        
+        if breach_data['success']:
+            breaches = breach_data['result']
+            if breaches:
+                message = f"Violations de données pour '{query}':\n"
+                for breach in breaches:
+                    message += f"- {breach}\n"
+                update.message.reply_text(message)
+            else:
+                update.message.reply_text(f"Aucune violation de données trouvée pour '{query}'.")
         else:
-            update.message.reply_text(f"Erreur HIBP: {response.status_code}")
+            update.message.reply_text(f"Erreur de l'API LeakCheck: {breach_data['error']}")
+    
+    except requests.RequestException as e:
+        logger.error(f"Erreur lors de l'accès à l'API LeakCheck: {e}")
+        update.message.reply_text(f"Erreur lors de l'accès à l'API LeakCheck: {str(e)}")
     except Exception as e:
-        update.message.reply_text(f"Erreur HIBP: {str(e)}")
+        logger.error(f"Erreur inattendue: {e}")
+        update.message.reply_text(f"Erreur inattendue : {str(e)}")

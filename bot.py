@@ -1,16 +1,19 @@
 import logging
-import config
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, Dispatcher
 from flask import Flask, request
 import os
 import telegram
-import whois
 import requests
 import json
 from coinbase_commerce.client import Client
 from urllib.parse import quote
 from queue import Queue
+
+# Importations des modules utils
+from utils.breaches import search_breaches
+from utils.whois import search_whois
+from utils.nslookup import nslookup_query
 
 # Initialiser Flask
 app = Flask(__name__)
@@ -50,7 +53,6 @@ dispatcher = Dispatcher(bot, None, workers=0)
 def start_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Bonjour! Utilisez /help pour voir les commandes disponibles.')
 
-
 # Fonction d'aide
 def help_command(update: Update, context: CallbackContext) -> None:
     help_text = (
@@ -63,7 +65,6 @@ def help_command(update: Update, context: CallbackContext) -> None:
         "/host <domain> - Utilise l'outil host pour obtenir des informations DNS\n"
         "/nslookup <query> - Utilise l'outil nslookup pour obtenir des informations DNS\n"
         "/dnseum <query> - Utilise l'outil dnseum\n"
-        "/bile_suite <query> - Utilise l'outil bile-suite\n"
         "/tld_expand <query> - Utilise l'outil tld-expand pour obtenir des informations sur les TLD\n"
         "/pay_with_coinbase <amount> - Payer avec Coinbase Commerce\n"
     )
@@ -90,9 +91,6 @@ def nslookup_command(update: Update, context: CallbackContext) -> None:
 
 def dnseum_command(update: Update, context: CallbackContext) -> None:
     dnseum_query(update, context)
-
-def bile_suite_command(update: Update, context: CallbackContext) -> None:
-    bile_suite_query(update, context)
 
 def tld_expand_command(update: Update, context: CallbackContext) -> None:
     tld_expand_query(update, context)
@@ -124,7 +122,7 @@ def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         update.message.reply_text(f"Erreur lors de la création de la charge de paiement : {str(e)}")
 
-# Initialisation du dispatcher
+# Ajout des gestionnaires de commandes au dispatcher
 dispatcher.add_handler(CommandHandler("start", start_command))
 dispatcher.add_handler(CommandHandler("help", help_command))
 dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
@@ -134,7 +132,6 @@ dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command
 dispatcher.add_handler(CommandHandler("host", host_command))
 dispatcher.add_handler(CommandHandler("nslookup", nslookup_command))
 dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
-dispatcher.add_handler(CommandHandler("bile_suite", bile_suite_command))
 dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
 dispatcher.add_handler(CommandHandler("pay_with_coinbase", pay_with_coinbase))
 

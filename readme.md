@@ -12,7 +12,6 @@ Commandes disponibles
     /host <domain> - Utilise l'outil host pour obtenir des informations DNS
     /nslookup <query> - Utilise l'outil nslookup pour obtenir des informations DNS
     /dnseum <query> - Utilise l'outil dnseum (fonctionnalité non encore implémentée)
-    /bile_suite <query> - Utilise l'outil bile-suite (fonctionnalité non encore implémentée)
     /tld_expand <query> - Utilise l'outil tld-expand pour obtenir des informations sur les TLD
 
 Configuration
