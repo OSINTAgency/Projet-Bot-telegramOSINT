@@ -51,6 +51,7 @@ dispatcher = Dispatcher(bot, None, workers=0)
 def start_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Bonjour! Utilisez /help pour voir les commandes disponibles.')
 
+
 # Fonction d'aide
 def help_command(update: Update, context: CallbackContext) -> None:
     help_text = (
