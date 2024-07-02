@@ -1,14 +1,13 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext, Dispatcher
 from flask import Flask, request
 import os
-import telegram
 import requests
 import json
 from coinbase_commerce.client import Client
 from urllib.parse import quote
-from queue import Queue
+from config import Config
 
 # Importations des modules utils
 from utils.breaches import search_breaches
@@ -18,36 +17,27 @@ from utils.nslookup import nslookup_query
 # Initialiser Flask
 app = Flask(__name__)
 
+# Initialiser le bot Telegram
+bot = Bot(Config.TELEGRAM_BOT_TOKEN)
+dispatcher = Dispatcher(bot, None, use_context=True)
+
 @app.route('/')
 def hello():
     return "Hello World!"
 
-@app.route('/{}'.format(config.TELEGRAM_BOT_TOKEN), methods=['POST'])
+@app.route('/{}'.format(Config.TELEGRAM_BOT_TOKEN), methods=['POST'])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
     dispatcher.process_update(update)
     return 'ok'
 
-# Obtenir les configurations depuis config.py
-bot_token = config.TELEGRAM_BOT_TOKEN
-if not bot_token:
-    raise ValueError("TELEGRAM_BOT_TOKEN is not set in config.py")
-
-app_url = config.APP_URL
-if not app_url:
-    raise ValueError("APP_URL is not set in config.py")
-
 # Définir l'URL du webhook
-set_webhook_url = f"https://api.telegram.org/bot{bot_token}/setWebhook?url={app_url}/{bot_token}"
+set_webhook_url = f"https://api.telegram.org/bot{Config.TELEGRAM_BOT_TOKEN}/setWebhook?url={Config.APP_URL}/{Config.TELEGRAM_BOT_TOKEN}"
 response = requests.get(set_webhook_url)
 if response.status_code == 200:
     print("Webhook set successfully")
 else:
     print(f"Failed to set webhook: {response.text}")
-
-# Initialisation du bot
-bot = telegram.Bot(token=bot_token)
-dispatcher = Dispatcher(bot, None, workers=0)
 
 # Fonction de démarrage
 def start_command(update: Update, context: CallbackContext) -> None:
@@ -101,9 +91,9 @@ def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
     if not amount:
         update.message.reply_text('Veuillez fournir un montant pour le paiement.')
         return
-    
-    coinbase_client = Client(api_key=config.COINBASE_API_KEY)
-    
+
+    coinbase_client = Client(api_key=Config.COINBASE_COMMERCE_API_KEY)
+
     try:
         # Créer une charge pour le paiement
         charge = coinbase_client.charge.create(
@@ -114,14 +104,13 @@ def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
                 'currency': 'USD'
             },
             pricing_type='fixed_price',
-            redirect_url=f"{app_url}/success",
-            cancel_url=f"{app_url}/cancel",
+            redirect_url=f"{Config.APP_URL}/success",
+            cancel_url=f"{Config.APP_URL}/cancel",
         )
-        
+
         update.message.reply_text(f"Veuillez procéder au paiement en cliquant sur le lien suivant : {charge['hosted_url']}")
     except Exception as e:
         update.message.reply_text(f"Erreur lors de la création de la charge de paiement : {str(e)}")
-
 # Ajout des gestionnaires de commandes au dispatcher
 dispatcher.add_handler(CommandHandler("start", start_command))
 dispatcher.add_handler(CommandHandler("help", help_command))
@@ -135,5 +124,19 @@ dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
 dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
 dispatcher.add_handler(CommandHandler("pay_with_coinbase", pay_with_coinbase))
 
+# Ajout d'un gestionnaire pour les erreurs
+def error(update: Update, context: CallbackContext) -> None:
+    """Log the error et notify the user."""
+    logging.warning(f'Update "{update}" caused error "{context.error}"')
+    update.message.reply_text('Une erreur est survenue. Veuillez réessayer plus tard.')
+
+dispatcher.add_error_handler(error)
+
+# Lancer l'application Flask
 if __name__ == '__main__':
+    # Configuration du logging pour voir les informations sur les erreurs
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        level=logging.INFO)
+
+    # Lancer le serveur Flask
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

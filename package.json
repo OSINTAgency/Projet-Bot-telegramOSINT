@@ -9,8 +9,10 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "heroku": "^8.1.9",
-    "heroku-cli-util": "^5.10.12",
-    "json": "^11.0.0"
+    "heroku-cli-util": "^5.8.4",
+    "json": "^11.0.0",
+    "lodash": "^4.17.21",
+    "ws": "^7.4.6"
   },
   "author": "VotreNom",
   "license": "ISC"

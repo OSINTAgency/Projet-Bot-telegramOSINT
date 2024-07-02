@@ -1,0 +1,12 @@
+modules = ["python-3.12", "nodejs-16"]
+run = "npm run start"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["sh", "-c", "npm run start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
