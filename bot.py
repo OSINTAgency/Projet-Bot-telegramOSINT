@@ -14,6 +14,11 @@ from utils.breaches import search_breaches
 from utils.whois import search_whois
 from utils.nslookup import nslookup_query
 
+
+# Configure logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Initialiser Flask
 app = Flask(__name__)
 
@@ -26,10 +31,13 @@ def hello():
     return "Hello World!"
 
 @app.route('/{}'.format(Config.TELEGRAM_BOT_TOKEN), methods=['POST'])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return 'ok'
+    def webhook():
+        logger.info("Webhook POST request received")
+        data = request.get_json(force=True)
+        logger.info(f"Request data: {data}")
+        update = Update.de_json(data, bot)
+        dispatcher.process_update(update)
+        return 'ok'
 
 # Définir l'URL du webhook
 set_webhook_url = f"https://api.telegram.org/bot{Config.TELEGRAM_BOT_TOKEN}/setWebhook?url={Config.APP_URL}/{Config.TELEGRAM_BOT_TOKEN}"
@@ -65,7 +73,13 @@ def search_twitter_command(update: Update, context: CallbackContext) -> None:
     search_twitter(update, context)
 
 def search_whois_command(update: Update, context: CallbackContext) -> None:
-    search_whois(update, context)
+    logging.info(f"Received /search_whois command from {update.message.chat_id}")
+    try:
+        search_whois(update, context)
+    except Exception as e:
+        logging.error(f"Error in search_whois_command: {str(e)}")
+        update.message.reply_text('Une erreur est survenue lors de l\'exécution de la commande /search_whois.')
+
 
 def search_ip_command(update: Update, context: CallbackContext) -> None:
     search_ip(update, context)
@@ -111,6 +125,7 @@ def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f"Veuillez procéder au paiement en cliquant sur le lien suivant : {charge['hosted_url']}")
     except Exception as e:
         update.message.reply_text(f"Erreur lors de la création de la charge de paiement : {str(e)}")
+
 # Ajout des gestionnaires de commandes au dispatcher
 dispatcher.add_handler(CommandHandler("start", start_command))
 dispatcher.add_handler(CommandHandler("help", help_command))
