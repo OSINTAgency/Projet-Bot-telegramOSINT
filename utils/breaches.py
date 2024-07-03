@@ -7,7 +7,8 @@ import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-LEAKCHECK_API_KEY = '7c129e1d6a22bfe3296440ec1a17cbcaeaa8ca4b'
+# Import API key from environment variable or config file
+LEAKCHECK_API_KEY = os.environ.get('LEAKCHECK_API_KEY') or 'your_default_api_key' 
 
 def search_breaches(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)
@@ -21,14 +22,17 @@ def search_breaches(update: Update, context: CallbackContext) -> None:
         }
         api_url = f"https://leakcheck.net/api?key={LEAKCHECK_API_KEY}&check={query}"
         response = requests.get(api_url, headers=headers)
+
+        # Check for HTTP errors
         response.raise_for_status()
-        
+
         breach_data = response.json()
-        
+
         if breach_data['success']:
             breaches = breach_data['result']
             if breaches:
                 message = f"Violations de données pour '{query}':\n"
+                # Use a table to format the breaches
                 for breach in breaches:
                     message += f"- {breach}\n"
                 update.message.reply_text(message)
@@ -36,8 +40,11 @@ def search_breaches(update: Update, context: CallbackContext) -> None:
                 update.message.reply_text(f"Aucune violation de données trouvée pour '{query}'.")
         else:
             update.message.reply_text(f"Erreur de l'API LeakCheck: {breach_data['error']}")
-    
-    except requests.RequestException as e:
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"Erreur HTTP lors de l'accès à l'API LeakCheck: {e}")
+        update.message.reply_text(f"Erreur lors de l'accès à l'API LeakCheck: {str(e)}")
+    except requests.exceptions.RequestException as e:
         logger.error(f"Erreur lors de l'accès à l'API LeakCheck: {e}")
         update.message.reply_text(f"Erreur lors de l'accès à l'API LeakCheck: {str(e)}")
     except Exception as e:

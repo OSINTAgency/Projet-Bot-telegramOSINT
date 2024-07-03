@@ -34,9 +34,12 @@ def search_whois(update: Update, context: CallbackContext) -> None:
         formatted_info = format_whois_info(domain_info)
         logger.info(f"Whois info for {domain}: {formatted_info}")
         update.message.reply_text(f"Whois Data pour '{domain}':\n{formatted_info}")
+    except whois.parser.PywhoisError as e:  # Handle specific Whois errors
+        logger.error(f"Domain not found: {e}")
+        update.message.reply_text(f"Nom de domaine introuvable: {str(e)}")
     except Exception as e:
-        logger.error(f"Erreur lors de la recherche Whois: {e}")
-        update.message.reply_text(f"Erreur Whois: {str(e)}")
+         logger.error(f"Erreur lors de la recherche Whois: {e}")
+         update.message.reply_text(f"Erreur Whois: {str(e)}")
 
 def format_whois_info(domain_info) -> str:
     info = []
@@ -45,4 +48,3 @@ def format_whois_info(domain_info) -> str:
             value = ', '.join(value)
         info.append(f"{key}: {value}")
     return '\n'.join(info)
-    

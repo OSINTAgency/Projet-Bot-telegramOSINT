@@ -11,9 +11,8 @@ from config import Config
 
 # Importations des modules utils
 from utils.breaches import search_breaches
-from utils.whois import search_whois
+from utils.whois import search_whois, is_valid_domain # Import is_valid_domain
 from utils.nslookup import nslookup_query
-
 
 # Configure logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -73,12 +72,30 @@ def search_twitter_command(update: Update, context: CallbackContext) -> None:
     search_twitter(update, context) # search_twitter not defined
 
 def search_whois_command(update: Update, context: CallbackContext) -> None:
-    logging.info(f"Received /search_whois command from {update.message.chat_id}")
+    logger.info("Entered search_whois function")
+    domain = ' '.join(context.args)
+    logger.info(f"Domain to search: {domain}")
+    if not domain:
+        update.message.reply_text('Veuillez fournir un domaine pour la recherche Whois.')
+        logger.warning("No domain provided for Whois search")
+        return
+
+    if not is_valid_domain(domain):
+        update.message.reply_text('Nom de domaine invalide. Veuillez fournir un nom de domaine valide.')
+        logger.warning(f"Invalid domain format: {domain}")
+        return
+
     try:
-        search_whois(update, context)
+        domain_info = whois.whois(domain)
+        formatted_info = format_whois_info(domain_info)
+        logger.info(f"Whois info for {domain}: {formatted_info}")
+        update.message.reply_text(f"Whois Data pour '{domain}':\n{formatted_info}")
+    except whois.parser.PywhoisError as e:  # Gérer les erreurs spécifiques de Whois
+        logger.error(f"Domain not found: {e}")
+        update.message.reply_text(f"Nom de domaine introuvable: {str(e)}")
     except Exception as e:
-        logging.error(f"Error in search_whois_command: {str(e)}")
-        update.message.reply_text('Une erreur est survenue lors de l\'exécution de la commande /search_whois.')
+        logger.error(f"Erreur lors de la recherche Whois: {e}")
+        update.message.reply_text(f"Erreur Whois: {str(e)}")
 
 
 def search_ip_command(update: Update, context: CallbackContext) -> None:
