@@ -5,7 +5,7 @@ from flask import Flask, request
 import os
 import requests
 import json
-from coinbase_commerce.client import Client
+from coinbase_commerce.client import Client  # This import is potentially unused
 from urllib.parse import quote
 from config import Config
 
@@ -31,13 +31,13 @@ def hello():
     return "Hello World!"
 
 @app.route('/{}'.format(Config.TELEGRAM_BOT_TOKEN), methods=['POST'])
-    def webhook():
-        logger.info("Webhook POST request received")
-        data = request.get_json(force=True)
-        logger.info(f"Request data: {data}")
-        update = Update.de_json(data, bot)
-        dispatcher.process_update(update)
-        return 'ok'
+def webhook():
+    logger.info("Webhook POST request received")
+    data = request.get_json(force=True)
+    logger.info(f"Request data: {data}")
+    update = Update.de_json(data, bot)
+    dispatcher.process_update(update)
+    return 'ok'
 
 # Définir l'URL du webhook
 set_webhook_url = f"https://api.telegram.org/bot{Config.TELEGRAM_BOT_TOKEN}/setWebhook?url={Config.APP_URL}/{Config.TELEGRAM_BOT_TOKEN}"
@@ -70,7 +70,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
 
 # Commandes spécifiques
 def search_twitter_command(update: Update, context: CallbackContext) -> None:
-    search_twitter(update, context)
+    search_twitter(update, context) # search_twitter not defined
 
 def search_whois_command(update: Update, context: CallbackContext) -> None:
     logging.info(f"Received /search_whois command from {update.message.chat_id}")
@@ -82,22 +82,22 @@ def search_whois_command(update: Update, context: CallbackContext) -> None:
 
 
 def search_ip_command(update: Update, context: CallbackContext) -> None:
-    search_ip(update, context)
+    search_ip(update, context) # search_ip not defined
 
 def search_breaches_command(update: Update, context: CallbackContext) -> None:
     search_breaches(update, context)
 
 def host_command(update: Update, context: CallbackContext) -> None:
-    host_lookup(update, context)
+    host_lookup(update, context) # host_lookup not defined
 
 def nslookup_command(update: Update, context: CallbackContext) -> None:
     nslookup_query(update, context)
 
 def dnseum_command(update: Update, context: CallbackContext) -> None:
-    dnseum_query(update, context)
+    dnseum_query(update, context) # dnseum_query not defined
 
 def tld_expand_command(update: Update, context: CallbackContext) -> None:
-    tld_expand_query(update, context)
+    tld_expand_query(update, context) # tld_expand_query not defined
 
 # Fonction de paiement avec Coinbase Commerce
 def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
