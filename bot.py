@@ -75,8 +75,9 @@ def search_whois_command(update: Update, context: CallbackContext) -> None:
     logger.info("Entered search_whois function")
     domain = ' '.join(context.args)
     logger.info(f"Domain to search: {domain}")
+
     if not domain:
-        update.message.reply_text('Veuillez fournir un domaine pour la recherche Whois.')
+        update.message.reply_text('Veuillez fournir un domaine pour la recherche Whois.\nUsage: /search_whois <domain>')
         logger.warning("No domain provided for Whois search")
         return
 
@@ -96,6 +97,7 @@ def search_whois_command(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         logger.error(f"Erreur lors de la recherche Whois: {e}")
         update.message.reply_text(f"Erreur Whois: {str(e)}")
+
 
 
 def search_ip_command(update: Update, context: CallbackContext) -> None:
