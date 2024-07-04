@@ -2,13 +2,14 @@ import requests
 from telegram import Update
 from telegram.ext import CallbackContext
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import API key from environment variable or config file
-LEAKCHECK_API_KEY = os.environ.get('LEAKCHECK_API_KEY') or 'your_default_api_key' 
+LEAKCHECK_API_KEY = os.environ.get('LEAKCHECK_API_KEY')
 
 def search_breaches(update: Update, context: CallbackContext) -> None:
     query = ' '.join(context.args)

@@ -32,11 +32,15 @@ def hello():
 @app.route('/{}'.format(Config.TELEGRAM_BOT_TOKEN), methods=['POST'])
 def webhook():
     logger.info("Webhook POST request received")
-    data = request.get_json(force=True)
-    logger.info(f"Request data: {data}")
-    update = Update.de_json(data, bot)
-    dispatcher.process_update(update)
+    try:
+        data = request.get_json(force=True)
+        logger.info(f"Request data: {data}")
+        update = Update.de_json(data, bot)
+        dispatcher.process_update(update)
+    except Exception as e:
+          logger.error(f"Error processing webhook: {e}")
     return 'ok'
+
 
 # Définir l'URL du webhook
 set_webhook_url = f"https://api.telegram.org/bot{Config.TELEGRAM_BOT_TOKEN}/setWebhook?url={Config.APP_URL}/{Config.TELEGRAM_BOT_TOKEN}"

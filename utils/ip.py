@@ -5,7 +5,7 @@ import json
 import re
 
 def is_valid_ip(ip_address: str) -> bool:
-    # Validate IP address format (both IPv4 and IPv6)
+    # Valider le format de l'adresse IP (IPv4 et IPv6)
     ip_pattern = re.compile(
         r"^(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3}|"
         r"(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}|"
@@ -40,6 +40,8 @@ def search_ip(update: Update, context: CallbackContext) -> None:
     except requests.RequestException as e:
         update.message.reply_text(f"Erreur lors de l'accès à l'API IPinfo: {str(e)}")
     except json.JSONDecodeError:
-        update.message.reply_text("Erreur de décodage JSON des données de l'API.")
+        # Essayer d'obtenir le message d'erreur à partir du contenu de la réponse
+        error_message = response.text if response.text else "Erreur de décodage JSON inconnue."
+        update.message.reply_text(f"Erreur de décodage JSON des données de l'API: {error_message}")
     except Exception as e:
         update.message.reply_text(f"Erreur inattendue : {str(e)}")

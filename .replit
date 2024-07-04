@@ -1,4 +1,4 @@
-modules = ["python-3.12", "nodejs-16"]
+modules = ["python-3.12", "nodejs-18"]
 run = "npm run start"
 
 [nix]
