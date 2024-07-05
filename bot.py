@@ -36,7 +36,6 @@ bot = updater.bot
 
 # Définir les commandes et obtenir le clavier interactif
 def set_commands_and_keyboard(bot):
-    # Définir les commandes pour l'autosaisie
     bot.set_my_commands([
         BotCommand("start", "Démarrer le bot"),
         BotCommand("help", "Afficher les commandes disponibles"),
@@ -51,20 +50,18 @@ def set_commands_and_keyboard(bot):
         BotCommand("pay_with_coinbase", "Payer avec Coinbase Commerce"),
     ])
 
-    # Créer un clavier interactif pour les fonctions principales
     keyboard = [
-        [InlineKeyboardButton("Rechercher des violations de données", callback_data='search_breaches')],
-        [InlineKeyboardButton("Rechercher des informations sur une adresse IP", callback_data='search_ip')],
-        [InlineKeyboardButton("Rechercher des informations WHOIS", callback_data='search_whois')],
-        [InlineKeyboardButton("Recherche sur Twitter", callback_data='search_twitter')],
-        [InlineKeyboardButton("Utiliser l'outil host", callback_data='host')],
-        [InlineKeyboardButton("Utiliser l'outil nslookup", callback_data='nslookup')],
-        [InlineKeyboardButton("Utiliser l'outil dnseum", callback_data='dnseum')],
-        [InlineKeyboardButton("Utiliser l'outil tld-expand", callback_data='tld_expand')],
-        [InlineKeyboardButton("Payer avec Coinbase Commerce", callback_data='pay_with_coinbase')],
+        [InlineKeyboardButton("Rechercher des violations de données", callback_data='/search_breaches')],
+        [InlineKeyboardButton("Rechercher des informations sur une adresse IP", callback_data='/search_ip')],
+        [InlineKeyboardButton("Rechercher des informations WHOIS", callback_data='/search_whois')],
+        [InlineKeyboardButton("Recherche sur Twitter", callback_data='/search_twitter')],
+        [InlineKeyboardButton("Utiliser l'outil host", callback_data='/host')],
+        [InlineKeyboardButton("Utiliser l'outil nslookup", callback_data='/nslookup')],
+        [InlineKeyboardButton("Utiliser l'outil dnseum", callback_data='/dnseum')],
+        [InlineKeyboardButton("Utiliser l'outil tld-expand", callback_data='/tld_expand')],
+        [InlineKeyboardButton("Payer avec Coinbase Commerce", callback_data='/pay_with_coinbase')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     return reply_markup
 
 reply_markup = set_commands_and_keyboard(bot)
