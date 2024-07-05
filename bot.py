@@ -162,6 +162,20 @@ dispatcher.add_handler(CommandHandler("dnseum", dnseum_command))
 dispatcher.add_handler(CommandHandler("tld_expand", tld_expand_command))
 dispatcher.add_handler(CommandHandler("pay_with_coinbase", pay_with_coinbase))
 
+# Définir les commandes pour l'autosaisie
+bot.set_my_commands([
+    BotCommand("start", "Démarrer le bot"),
+    BotCommand("help", "Afficher les commandes disponibles"),
+    BotCommand("search_breaches", "Rechercher des violations de données"),
+    BotCommand("search_ip", "Rechercher des informations sur une adresse IP"),
+    BotCommand("search_whois", "Rechercher des informations WHOIS"),
+    BotCommand("search_twitter", "Recherche sur Twitter"),
+    BotCommand("host", "Utilise l'outil host"),
+    BotCommand("nslookup", "Utilise l'outil nslookup"),
+    BotCommand("dnseum", "Utilise l'outil dnseum"),
+    BotCommand("tld_expand", "Utilise l'outil tld-expand"),
+    BotCommand("pay_with_coinbase", "Payer avec Coinbase Commerce"),
+])
 # Ajout d'un gestionnaire pour les erreurs
 def error(update: Update, context: CallbackContext) -> None:
     """Log the error et notify the user."""
