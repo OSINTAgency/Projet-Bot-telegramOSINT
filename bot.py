@@ -5,6 +5,7 @@ from flask import Flask, request
 import os
 import requests
 import json
+import whois
 from coinbase_commerce.client import Client  # This import is potentially unused
 from urllib.parse import quote
 from config import Config
