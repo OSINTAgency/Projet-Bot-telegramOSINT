@@ -12,7 +12,7 @@ from config import Config
 
 # Importations des modules utils
 from utils.breaches import search_breaches
-from utils.whois import search_whois, is_valid_domain # Import is_valid_domain
+from utils.whois import search_whois, is_valid_domain
 from utils.nslookup import nslookup_query
 
 # Configure logging
@@ -120,7 +120,22 @@ def help_command(update: Update, context: CallbackContext) -> None:
 
 # Commandes spécifiques
 def search_twitter_command(update: Update, context: CallbackContext) -> None:
-    search_twitter(update, context)  # search_twitter not defined
+    query = ' '.join(context.args)
+    if not query:
+        update.message.reply_text('Veuillez fournir une requête pour la recherche sur Twitter.\nUsage: /search_twitter <query>')
+        return
+
+    try:
+        tweets = search_twitter(query)
+        if tweets:
+            message = f"Résultats de la recherche Twitter pour '{query}':\n"
+            for tweet in tweets:
+                message += f"- @{tweet['user']}: {tweet['text']}\n"
+            update.message.reply_text(message)
+        else:
+            update.message.reply_text(f"Aucun résultat trouvé pour '{query}'.")
+    except Exception as e:
+        update.message.reply_text(f"Erreur lors de la recherche sur Twitter: {str(e)}")
 
 def search_whois_command(update: Update, context: CallbackContext) -> None:
     logger.info("Entered search_whois function")
@@ -138,8 +153,8 @@ def search_whois_command(update: Update, context: CallbackContext) -> None:
         return
 
     try:
-        domain_info = whois.whois(domain)
-        formatted_info = format_whois_info(domain_info)
+        domain_info = search_whois(domain)
+        formatted_info = json.dumps(domain_info, indent=2)
         logger.info(f"Whois info for {domain}: {formatted_info}")
         update.message.reply_text(f"Whois Data pour '{domain}':\n{formatted_info}")
     except whois.parser.PywhoisError as e:  # Gérer les erreurs spécifiques de Whois
