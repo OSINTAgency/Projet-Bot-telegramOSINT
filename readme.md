@@ -7,16 +7,10 @@ Commandes disponibles
     /help - Affiche cette aide
     /search_twitter <query> - Recherche sur Twitter
     /search_whois <domain> - Recherche Whois pour un domaine
-    /search_ip <ip_address> - Recherche d'informations sur une adresse IP
     /search_breaches <email> - Recherche de fuites de données pour une adresse email
-    /host <domain> - Utilise l'outil host pour obtenir des informations DNS
-    /nslookup <query> - Utilise l'outil nslookup pour obtenir des informations DNS
-    /dnseum <query> - Utilise l'outil dnseum (fonctionnalité non encore implémentée)
-    /tld_expand <query> - Utilise l'outil tld-expand pour obtenir des informations sur les TLD
+    /scan_url <URL> - Recherche les informations sur l'url
 
-Configuration
 
-Ajoutez les clés API et les configurations nécessaires dans config.py.
 Tarification
 Essai Gratuit / Freemium
 
@@ -25,9 +19,7 @@ Essai Gratuit / Freemium
 
 Abonnements
 
-    Plan de Base : 10 $/mois ou 100 $/an
-    Plan Pro : 25 $/mois ou 250 $/an
-    Plan Entreprise : 50 $/mois ou 500 $/an
+    Plan annuelle : 20 $/mois ou 200 $/an
 
 Paiement à la Carte
 

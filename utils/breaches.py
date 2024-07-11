@@ -1,7 +1,6 @@
 import sys
 sys.path.append('../Pastepwnd')  # Assurez-vous que le chemin est correct
 
-from pastepwnd import PastePwnd
 import requests
 from telegram import Update
 from telegram.ext import CallbackContext
