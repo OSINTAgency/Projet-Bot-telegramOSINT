@@ -15,47 +15,15 @@ def is_valid_domain(domain: str) -> bool:
     )
     return domain_pattern.match(domain) is not None
 
-def search_whois(update: Update, context: CallbackContext) -> None:
-    logger.info("Entered search_whois function")
-    domain = ' '.join(context.args)
-    logger.info(f"Domain to search: {domain}")
-
-    # Extract domain name if it's in URL format
-    if domain.startswith('<') and domain.endswith('>'):
-        domain = domain[1:-1]
-    if domain.startswith('http://') or domain.startswith('https://'):
-        domain = domain.split("//")[-1]
-
-    domain = domain.rstrip('/')
-
-    logger.info(f"Formatted domain to search: {domain}")
-
-    if not domain:
-        update.message.reply_text('Veuillez fournir un domaine pour la recherche Whois.')
-        logger.warning("No domain provided for Whois search")
-        return
-
-    if not is_valid_domain(domain):
-        update.message.reply_text('Nom de domaine invalide. Veuillez fournir un nom de domaine valide.')
-        logger.warning(f"Invalid domain format: {domain}")
-        return
-
+def search_whois(domain: str) -> dict:
+    logger.info(f"Performing WHOIS search for domain: {domain}")
     try:
         domain_info = whois.whois(domain)
-        formatted_info = format_whois_info(domain_info)
-        logger.info(f"Whois info for {domain}: {formatted_info}")
-        update.message.reply_text(f"Whois Data pour '{domain}':\n{formatted_info}")
-    except whois.parser.PywhoisError as e:  # Handle specific Whois errors
-        logger.error(f"Domain not found: {e}")
-        update.message.reply_text(f"Nom de domaine introuvable: {str(e)}")
+        logger.info(f"WHOIS search successful for domain: {domain}")
+        return domain_info
+    except whois.parser.PywhoisError as e:
+        logger.error(f"WHOIS domain not found error: {e}")
+        raise e
     except Exception as e:
-         logger.error(f"Erreur lors de la recherche Whois: {e}")
-         update.message.reply_text(f"Erreur Whois: {str(e)}")
-
-def format_whois_info(domain_info) -> str:
-    info = []
-    for key, value in domain_info.items():
-        if isinstance(value, list):
-            value = ', '.join(value)
-        info.append(f"{key}: {value}")
-    return '\n'.join(info)
+        logger.error(f"General error in WHOIS search: {e}")
+        raise e
