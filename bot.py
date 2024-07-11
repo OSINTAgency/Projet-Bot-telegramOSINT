@@ -12,7 +12,6 @@ from config import Config
 # Importations des modules utils
 from utils.breaches import search_breaches
 from utils.whois import search_whois, is_valid_domain
-from utils.pastepwnd import HIBP, HackedEmails, Workbench, Output  # Assurez-vous que ces classes sont disponibles
 
 # Configure logging
 logging.basicConfig(

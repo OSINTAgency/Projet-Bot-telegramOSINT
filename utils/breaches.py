@@ -1,11 +1,8 @@
 import requests
-import argparse
-import sys
 import re
 import time
-import os
 from telegram import Update, ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import CallbackContext
 
 class HackedEmails:
     def __init__(self):
@@ -161,6 +158,35 @@ class Output:
         with open("pastepwnd.html" , "w") as f:
             f.write(html)
         return os.path.abspath("pastepwnd.html")
+
+def search_breaches(update: Update, context: CallbackContext) -> None:
+    email = ' '.join(context.args)
+    if not email:
+        update.message.reply_text('Veuillez fournir un email pour la recherche de fuites de données.')
+        return
+
+    hibp = HIBP()
+    he = HackedEmails()
+    workbench = Workbench()
+    output = Output()
+    results = []
+
+    response = hibp.request(hibp.paste(email))  # hibp request
+    if response:
+        for entity in response:
+            results.append(workbench.format_paste(entity, email))
+
+    he_response = he.request(email)  # hacked-email.com request
+    if he_response:
+        for breach in he_response["data"]:
+            results.append(workbench.format_hackedemail(breach, email))
+
+    if results:
+        html_result = output.create_email_table(results)
+        file_path = output.write_file(output.create_webpage(html_result))
+        update.message.reply_text(f"Compromises found for {email}:\nHTML results saved to {file_path}.", parse_mode=ParseMode.HTML)
+    else:
+        update.message.reply_text(f"No compromises found for {email}.")
 
 def main():
     # Telegram bot token (replace with your actual bot token)

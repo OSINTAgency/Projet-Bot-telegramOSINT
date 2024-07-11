@@ -1,4 +1,4 @@
-OSINT Bot Telegram
+CyberDetectiveBot
 
 Un bot Telegram pour effectuer des recherches OSINT et générer des rapports détaillés.
 Commandes disponibles
