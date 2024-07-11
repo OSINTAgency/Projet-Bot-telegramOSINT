@@ -12,6 +12,8 @@ from config import Config
 # Importations des modules utils
 from utils.breaches import search_breaches
 from utils.whois import search_whois, is_valid_domain
+from utils.scan_url import scan_url  # Importation de la fonction scan_url
+
 
 # Configure logging
 logging.basicConfig(
@@ -43,12 +45,14 @@ def set_commands_and_keyboard(bot):
         BotCommand("search_whois", "Rechercher des informations WHOIS"),
         BotCommand("search_twitter", "Recherche sur Twitter"),
         BotCommand("pay_with_coinbase", "Payer avec Coinbase Commerce"),
+        BotCommand("scan_url", "Analyser une URL")  # Ajout de la commande scan_url
     ])
 
     keyboard = [
         [InlineKeyboardButton("Rechercher des violations de données", callback_data='/search_breaches')],
         [InlineKeyboardButton("Rechercher des informations WHOIS", callback_data='/search_whois')],
         [InlineKeyboardButton("Recherche sur Twitter", callback_data='/search_twitter')],
+        [InlineKeyboardButton("Analyser une URL", callback_data='/scan_url')],  # Ajout du bouton scan_url
         [InlineKeyboardButton("Payer avec Coinbase Commerce", callback_data='/pay_with_coinbase')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -99,7 +103,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
         "/search_whois <domain> - Recherche Whois pour un domaine\n"
         "/search_breaches <email> - Recherche de fuites de données pour une adresse email\n"
         "/pay_with_coinbase <amount> - Payer avec Coinbase Commerce\n"
-        "/scan_url <URL> - Recherche les informations sur l'url/n"
+        "/scan_url <URL> - Recherche les informations sur l'url\n"
     )
     update.message.reply_text(help_text)
 
@@ -122,33 +126,18 @@ def search_twitter_command(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         update.message.reply_text(f"Erreur lors de la recherche sur Twitter: {str(e)}")
 
- # Fonction pour analyser les URLs avec urlDNA
+# Fonction pour analyser les URLs avec urlDNA
 def scan_url_command(update: Update, context: CallbackContext) -> None:
-     url = ' '.join(context.args)
-     if not url:
-         update.message.reply_text('Veuillez fournir une URL pour l\'analyser.\nUsage: /scan_url <url>')
-         return
+    url = ' '.join(context.args)
+    if not url:
+        update.message.reply_text('Veuillez fournir une URL pour l\'analyser.\nUsage: /scan_url <url>')
+        return
 
-     try:
-         result = scan_with_url_dna(url)
-         update.message.reply_text(result)
-     except Exception as e:
-         update.message.reply_text(f"Erreur lors de l'analyse de l'URL: {str(e)}")
-
-def scan_with_url_dna(url: str) -> str:
-    headers = {
-        'Authorization': f'Bearer {Config.URLDNA_API_KEY}',
-    }
-    params = {
-        'url': url,
-    }
-    response = requests.get('https://api.urldna.io/analyze', headers=headers, params=params)
-    if response.status_code == 200:
-        data = response.json()
-        return f"Résultat de l'analyse pour {url}:\n{json.dumps(data, indent=2)}"
-    else:
-        return f"Erreur lors de l'analyse de l'URL {url}. Statut: {response.status_code}"
-
+    try:
+        result = scan_url(url)  # Utilisation de la fonction scan_url importée
+        update.message.reply_text(result)
+    except Exception as e:
+        update.message.reply_text(f"Erreur lors de l'analyse de l'URL: {str(e)}")
 
 def search_whois_command(update: Update, context: CallbackContext) -> None:
     logger.info("Entered search_whois function")
@@ -180,8 +169,6 @@ def search_whois_command(update: Update, context: CallbackContext) -> None:
 def search_breaches_command(update: Update, context: CallbackContext) -> None:
     search_breaches(update, context)
 
-
-
 # Fonction de paiement avec Coinbase Commerce
 def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
     amount = ' '.join(context.args)
@@ -205,7 +192,6 @@ def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
             cancel_url=f"{Config.APP_URL}/cancel",
         )
 
-
         update.message.reply_text(f"Veuillez procéder au paiement en cliquant sur le lien suivant : {charge['hosted_url']}")
     except Exception as e:
         update.message.reply_text(f"Erreur lors de la création de la charge de paiement : {str(e)}")
@@ -214,10 +200,10 @@ def pay_with_coinbase(update: Update, context: CallbackContext) -> None:
 dispatcher.add_handler(CommandHandler("start", start_command))
 dispatcher.add_handler(CommandHandler("help", help_command))
 dispatcher.add_handler(CommandHandler("search_twitter", search_twitter_command))
-dispatcher.add_handler(CommandHandler("search_whois", search_whois_command)) # Remove this line
+dispatcher.add_handler(CommandHandler("search_whois", search_whois_command))
 dispatcher.add_handler(CommandHandler("search_breaches", search_breaches_command))
 dispatcher.add_handler(CommandHandler("pay_with_coinbase", pay_with_coinbase))
-
+dispatcher.add_handler(CommandHandler("scan_url", scan_url_command))  # Ajout du gestionnaire de commande pour scan_url
 
 # Ajout d'un gestionnaire pour les erreurs
 def error(update: Update, context: CallbackContext) -> None:
@@ -230,7 +216,7 @@ dispatcher.add_error_handler(error)
 # Lancer l'application Flask
 if __name__ == '__main__':
     # Configuration du logging pour voir les informations sur les erreurs
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s',
                         level=logging.INFO)
 
     # Lancer le serveur Flask

@@ -19,6 +19,17 @@ def search_whois(update: Update, context: CallbackContext) -> None:
     logger.info("Entered search_whois function")
     domain = ' '.join(context.args)
     logger.info(f"Domain to search: {domain}")
+
+    # Extract domain name if it's in URL format
+    if domain.startswith('<') and domain.endswith('>'):
+        domain = domain[1:-1]
+    if domain.startswith('http://') or domain.startswith('https://'):
+        domain = domain.split("//")[-1]
+
+    domain = domain.rstrip('/')
+
+    logger.info(f"Formatted domain to search: {domain}")
+
     if not domain:
         update.message.reply_text('Veuillez fournir un domaine pour la recherche Whois.')
         logger.warning("No domain provided for Whois search")
