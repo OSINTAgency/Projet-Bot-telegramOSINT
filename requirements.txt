@@ -34,3 +34,4 @@ tzlocal==5.2
 urllib3==1.26.19
 Werkzeug==1.0.1
 whois==0.9.13
+utils

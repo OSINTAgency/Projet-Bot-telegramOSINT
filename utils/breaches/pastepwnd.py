@@ -1,6 +1,3 @@
-#!/usr/bin/env python2
-# Copyright (c) 2018 Jonathan Broche (@g0jhonny) @LeapSecurity
-
 import requests, json, argparse, sys, re, time, os
 
 class HackedEmails:
