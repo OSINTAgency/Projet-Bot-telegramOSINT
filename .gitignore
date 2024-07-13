@@ -3,7 +3,6 @@ __pycache__/
 .env
 myenv/
 data/reports/
-.vercel
 config.py
 
 node_modules
