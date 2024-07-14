@@ -2,7 +2,7 @@
 
 class Config:
     TELEGRAM_BOT_TOKEN = '7341170491:AAGVNu7Iq0xWbQbqvjxXBOQHVi4mOo2h7Pc'
-    APP_URL = 'https://cyberdetectivebot-9951c4def877.herokuapp.com/'
+    APP_URL = 'https://cyberdetectivebot-44a828f078dc.herokuapp.com/'
 
     # Twitter API Keys and Tokens
     TWITTER_API_KEY = 'FPwVFnfbkA37Tz8qbVtmV7lGY'
