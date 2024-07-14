@@ -2,7 +2,7 @@ import requests
 import os
 
 # Remplacez par votre URL Heroku
-heroku_app_url = "https://cyberdetectivebot-9951c4def877.herokuapp.com/"
+heroku_app_url = "https://cyberdetectivebot-44a828f078dc.herokuapp.com/"
 
 # Remplacez par votre token de bot Telegram
 telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN')  # Ou remplacez par votre token directement
